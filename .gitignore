@@ -1,0 +1,41 @@
+# Node
+node_modules/
+.next/
+.turbo/
+.vercel/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+
+# Android / Gradle
+.gradle/
+local.properties
+build/
+**/build/
+captures/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+.python-version
+
+# Logs
+*.log

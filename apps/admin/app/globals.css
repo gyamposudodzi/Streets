@@ -1,0 +1,47 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", sans-serif;
+  background: #eef3ef;
+  color: #162019;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.page {
+  min-height: 100vh;
+  padding: 2rem;
+  background:
+    linear-gradient(135deg, rgba(93, 140, 106, 0.18), transparent 40%),
+    linear-gradient(180deg, #f5faf6 0%, #e7efe9 100%);
+}
+
+.hero {
+  max-width: 70rem;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  color: #41684a;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 12px 30px rgba(32, 64, 44, 0.1);
+}
