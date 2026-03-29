@@ -1,0 +1,84 @@
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    phone TEXT,
+    role TEXT NOT NULL,
+    status TEXT NOT NULL,
+    is_age_verified INTEGER NOT NULL DEFAULT 0,
+    email_verified INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS creator_profiles (
+    user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    display_name TEXT NOT NULL,
+    bio TEXT NOT NULL,
+    country TEXT NOT NULL,
+    service_region TEXT NOT NULL,
+    verification_status TEXT NOT NULL,
+    payout_status TEXT NOT NULL,
+    average_rating REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS services (
+    id TEXT PRIMARY KEY,
+    creator_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    category TEXT NOT NULL,
+    duration_minutes INTEGER NOT NULL,
+    price INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    fulfillment_type TEXT NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS availability_slots (
+    id TEXT PRIMARY KEY,
+    creator_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    starts_at TEXT NOT NULL,
+    ends_at TEXT NOT NULL,
+    is_reserved INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS bookings (
+    id TEXT PRIMARY KEY,
+    buyer_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    creator_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    slot_id TEXT REFERENCES availability_slots(id) ON DELETE SET NULL,
+    status TEXT NOT NULL,
+    scheduled_start TEXT,
+    scheduled_end TEXT,
+    fulfillment_type TEXT NOT NULL,
+    release_at TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS booking_events (
+    id TEXT PRIMARY KEY,
+    booking_id TEXT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    event_type TEXT NOT NULL,
+    actor_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    detail TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_services_creator_id ON services (creator_id);
+CREATE INDEX IF NOT EXISTS idx_services_category ON services (category);
+CREATE INDEX IF NOT EXISTS idx_services_fulfillment_type ON services (fulfillment_type);
+CREATE INDEX IF NOT EXISTS idx_slots_service_id ON availability_slots (service_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_buyer_id ON bookings (buyer_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_creator_id ON bookings (creator_id);
+CREATE INDEX IF NOT EXISTS idx_booking_events_booking_id ON booking_events (booking_id);

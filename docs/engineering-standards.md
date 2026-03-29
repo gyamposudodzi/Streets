@@ -10,7 +10,8 @@
 ## Backend
 
 - FastAPI for APIs
-- PostgreSQL as source of truth
+- SQLite for development speed during early phases
+- PostgreSQL remains the intended production source of truth
 - Redis for ephemeral coordination and messaging fanout
 - Background jobs for timers, webhook processing, notifications, and release workflows
 

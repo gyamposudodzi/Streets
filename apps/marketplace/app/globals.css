@@ -15,8 +15,6 @@ body {
 
 .page {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
   padding: 2rem;
   background:
     radial-gradient(circle at top, rgba(199, 125, 62, 0.22), transparent 35%),
@@ -24,11 +22,77 @@ body {
 }
 
 .hero {
-  max-width: 42rem;
+  max-width: 72rem;
+  margin: 0 auto 2rem;
   padding: 2.5rem;
   border-radius: 1.5rem;
   background: rgba(255, 251, 245, 0.9);
   box-shadow: 0 20px 50px rgba(76, 44, 20, 0.12);
+}
+
+.panel {
+  max-width: 72rem;
+  margin: 0 auto 2rem;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  background: rgba(255, 251, 245, 0.88);
+  box-shadow: 0 16px 40px rgba(76, 44, 20, 0.1);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.card {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 248, 239, 0.95);
+  border: 1px solid rgba(143, 90, 50, 0.12);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.stat {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 245, 231, 0.95);
+  border: 1px solid rgba(143, 90, 50, 0.12);
+}
+
+.stat strong {
+  display: block;
+  font-size: 1.8rem;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.note {
+  max-width: 20rem;
+  color: #7b624d;
+}
+
+.badge {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: #f4ddc2;
+  color: #70461f;
+  text-transform: capitalize;
+  font-size: 0.8rem;
 }
 
 .eyebrow {
@@ -45,4 +109,13 @@ h1 {
 
 p {
   line-height: 1.6;
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+h3 {
+  margin: 0 0 0.75rem;
 }

@@ -38,10 +38,12 @@ packages/
 
 Phase 0 focuses on structure and standards, not a fully installed runtime yet.
 
+Local backend development now defaults to SQLite at `backend/data/streets_dev.db` so we can work without requiring PostgreSQL during early feature delivery.
+
 Suggested next steps:
 
 1. Install dependencies for the selected package managers and toolchains.
-2. Expand the FastAPI app into versioned modules and database integrations.
+2. Expand the FastAPI app into versioned modules and grow the SQLite-backed development data layer.
 3. Replace placeholder Next.js pages with real app bootstrap code.
 4. Generate the Android Gradle wrapper and complete the Compose app bootstrap.
 5. Wire CI to real lint, test, and build commands once dependencies are installed.

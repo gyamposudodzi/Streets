@@ -5,6 +5,8 @@ const requiredPaths = [
   "apps/admin/package.json",
   "apps/android/settings.gradle.kts",
   "backend/app/main.py",
+  "backend/db/schema.sql",
+  "backend/db/schema.sqlite.sql",
   "backend/workers/__init__.py",
   "infra/docker/docker-compose.yml",
   "docs/architecture.md",
