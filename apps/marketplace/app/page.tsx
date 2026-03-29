@@ -1,27 +1,13 @@
-import type { CreatorSummary, Service } from "@streets/types";
+import Link from "next/link";
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { listCreators, listServices } from "@streets/api-client";
 
-async function getMarketplaceData(): Promise<{
-  creators: CreatorSummary[];
-  services: Service[];
-  isFallback: boolean;
-}> {
+async function getMarketplaceData() {
   try {
-    const [creatorsResponse, servicesResponse] = await Promise.all([
-      fetch(`${apiBaseUrl}/api/v1/creators`, { cache: "no-store" }),
-      fetch(`${apiBaseUrl}/api/v1/services`, { cache: "no-store" })
-    ]);
-
-    if (!creatorsResponse.ok || !servicesResponse.ok) {
-      throw new Error("API request failed");
-    }
-
     const [creators, services] = await Promise.all([
-      creatorsResponse.json() as Promise<CreatorSummary[]>,
-      servicesResponse.json() as Promise<Service[]>
+      listCreators(),
+      listServices()
     ]);
-
     return { creators, services, isFallback: false };
   } catch {
     return { creators: [], services: [], isFallback: true };
@@ -85,6 +71,9 @@ export default async function MarketplaceHome() {
                   {creator.country} · {creator.verification_status}
                 </p>
                 <p>Rating {creator.average_rating.toFixed(1)}</p>
+                <Link href={`/search?creator=${creator.user_id}`} className="inlineLink">
+                  View services
+                </Link>
               </article>
             ))
           ) : (
@@ -114,6 +103,9 @@ export default async function MarketplaceHome() {
                   {service.category} · {service.duration_minutes} min
                 </p>
                 <p>{formatPrice(service.price, service.currency)}</p>
+                <Link href={`/services/${service.id}`} className="inlineLink">
+                  Open service
+                </Link>
               </article>
             ))
           ) : (

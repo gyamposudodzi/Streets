@@ -53,6 +53,11 @@ body {
   border: 1px solid rgba(143, 90, 50, 0.12);
 }
 
+.stack {
+  display: grid;
+  gap: 1rem;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
@@ -95,6 +100,59 @@ body {
   font-size: 0.8rem;
 }
 
+.filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 16rem) auto;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(143, 90, 50, 0.22);
+  background: rgba(255, 253, 249, 0.98);
+  color: inherit;
+}
+
+.button,
+.buttonLink,
+.inlineLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button,
+.buttonLink {
+  padding: 0.85rem 1.1rem;
+  border: none;
+  border-radius: 0.9rem;
+  background: #7c4d28;
+  color: #fffaf4;
+}
+
+.inlineLink {
+  margin-top: 0.5rem;
+  color: #7c4d28;
+  font-weight: 600;
+}
+
+.formShell {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: rgba(255, 247, 235, 0.9);
+  border: 1px solid rgba(143, 90, 50, 0.12);
+}
+
+.errorText {
+  color: #a22718;
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -118,4 +176,10 @@ h2 {
 
 h3 {
   margin: 0 0 0.75rem;
+}
+
+@media (max-width: 700px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
 }
