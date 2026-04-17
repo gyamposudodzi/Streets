@@ -38,15 +38,15 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
         <p className="eyebrow">Booking</p>
         <h1>Create booking draft</h1>
         <p>
-          This Phase 1 flow creates a booking directly against the backend API using a
-          registered buyer ID.
+          This Phase 1 flow creates a booking directly against the backend API using the
+          active buyer session stored from the auth page.
         </p>
         <div className="grid">
           <article className="card">
             <h3>{service.title}</h3>
             <p>{service.description}</p>
             <p>
-              {service.fulfillment_type.replace("_", " ")} · {service.duration_minutes} min
+              {service.fulfillment_type.replace("_", " ")} - {service.duration_minutes} min
             </p>
           </article>
           <article className="card">

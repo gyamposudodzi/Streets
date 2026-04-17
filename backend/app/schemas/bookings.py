@@ -6,7 +6,6 @@ from app.domain.enums import BookingStatus, FulfillmentType
 
 
 class BookingCreateRequest(BaseModel):
-    buyer_id: str
     service_id: str
     slot_id: str | None = None
 

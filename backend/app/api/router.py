@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import auth, bookings, creators, meta, services
+from app.api.routes import admin, auth, bookings, creators, meta, payments, services
 
 
 api_router = APIRouter()
@@ -9,3 +9,5 @@ api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(creators.router, prefix="/creators", tags=["creators"])
 api_router.include_router(services.router, prefix="/services", tags=["services"])
 api_router.include_router(bookings.router, prefix="/bookings", tags=["bookings"])
+api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
+api_router.include_router(admin.router, prefix="/admin", tags=["admin"])

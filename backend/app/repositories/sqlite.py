@@ -10,6 +10,9 @@ from app.models.entities import (
     Booking,
     BookingEvent,
     CreatorProfile,
+    HeldFunds,
+    LedgerEntry,
+    Payment,
     Service,
     Session,
     User,
@@ -154,6 +157,21 @@ class SQLiteRepository:
         if row is None:
             return None
         return BookingEvent.model_validate(dict(row))
+
+    def _to_payment(self, row: sqlite3.Row | None) -> Payment | None:
+        if row is None:
+            return None
+        return Payment.model_validate(dict(row))
+
+    def _to_held_funds(self, row: sqlite3.Row | None) -> HeldFunds | None:
+        if row is None:
+            return None
+        return HeldFunds.model_validate(dict(row))
+
+    def _to_ledger_entry(self, row: sqlite3.Row | None) -> LedgerEntry | None:
+        if row is None:
+            return None
+        return LedgerEntry.model_validate(dict(row))
 
     def list_creators(self) -> list[CreatorProfile]:
         with self._connect() as connection:
@@ -367,6 +385,13 @@ class SQLiteRepository:
             ).fetchone()
         return self._to_user(row)
 
+    def list_users(self) -> list[User]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM users ORDER BY created_at DESC"
+            ).fetchall()
+        return [self._to_user(row) for row in rows]
+
     def create_session(self, session: Session) -> Session:
         with self._connect() as connection:
             connection.execute(
@@ -451,6 +476,13 @@ class SQLiteRepository:
             ).fetchone()
         return self._to_booking(row)
 
+    def list_bookings(self) -> list[Booking]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM bookings ORDER BY created_at DESC"
+            ).fetchall()
+        return [self._to_booking(row) for row in rows]
+
     def list_booking_events(self, booking_id: str) -> list[BookingEvent]:
         with self._connect() as connection:
             rows = connection.execute(
@@ -490,6 +522,143 @@ class SQLiteRepository:
                 ),
             )
         return self.get_booking(booking_id)
+
+    def mark_booking_paid_pending_acceptance(self, booking_id: str, actor_user_id: str) -> Booking | None:
+        booking = self.get_booking(booking_id)
+        if booking is None:
+            return None
+
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE bookings SET status = ? WHERE id = ?",
+                ("paid_pending_acceptance", booking_id),
+            )
+            event = BookingEvent(
+                booking_id=booking_id,
+                event_type="payment.succeeded",
+                actor_user_id=actor_user_id,
+                detail="Payment succeeded and funds moved to held state.",
+            )
+            connection.execute(
+                """
+                INSERT INTO booking_events (id, booking_id, event_type, actor_user_id, detail, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event.id,
+                    event.booking_id,
+                    event.event_type,
+                    event.actor_user_id,
+                    event.detail,
+                    event.created_at.isoformat(),
+                ),
+            )
+        return self.get_booking(booking_id)
+
+    def create_payment(self, payment: Payment) -> Payment:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO payments (
+                    id, booking_id, provider, provider_payment_id, gross_amount,
+                    platform_fee, creator_amount, currency, status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    payment.id,
+                    payment.booking_id,
+                    payment.provider,
+                    payment.provider_payment_id,
+                    payment.gross_amount,
+                    payment.platform_fee,
+                    payment.creator_amount,
+                    payment.currency,
+                    payment.status,
+                    payment.created_at.isoformat(),
+                ),
+            )
+        return payment
+
+    def get_payment(self, payment_id: str) -> Payment | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM payments WHERE id = ?",
+                (payment_id,),
+            ).fetchone()
+        return self._to_payment(row)
+
+    def list_payments_for_booking(self, booking_id: str) -> list[Payment]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM payments WHERE booking_id = ? ORDER BY created_at DESC",
+                (booking_id,),
+            ).fetchall()
+        return [self._to_payment(row) for row in rows]
+
+    def update_payment_status(self, payment_id: str, status: str) -> Payment | None:
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE payments SET status = ? WHERE id = ?",
+                (status, payment_id),
+            )
+        return self.get_payment(payment_id)
+
+    def create_held_funds(self, held_funds: HeldFunds) -> HeldFunds:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO held_funds (
+                    id, booking_id, payment_id, amount, currency, status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    held_funds.id,
+                    held_funds.booking_id,
+                    held_funds.payment_id,
+                    held_funds.amount,
+                    held_funds.currency,
+                    held_funds.status,
+                    held_funds.created_at.isoformat(),
+                ),
+            )
+        return held_funds
+
+    def list_held_funds_for_booking(self, booking_id: str) -> list[HeldFunds]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM held_funds WHERE booking_id = ? ORDER BY created_at DESC",
+                (booking_id,),
+            ).fetchall()
+        return [self._to_held_funds(row) for row in rows]
+
+    def create_ledger_entry(self, entry: LedgerEntry) -> LedgerEntry:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO ledger_entries (
+                    id, account_type, account_id, booking_id, entry_type, amount, currency, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    entry.id,
+                    entry.account_type,
+                    entry.account_id,
+                    entry.booking_id,
+                    entry.entry_type,
+                    entry.amount,
+                    entry.currency,
+                    entry.created_at.isoformat(),
+                ),
+            )
+        return entry
+
+    def list_ledger_entries_for_booking(self, booking_id: str) -> list[LedgerEntry]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM ledger_entries WHERE booking_id = ? ORDER BY created_at ASC",
+                (booking_id,),
+            ).fetchall()
+        return [self._to_ledger_entry(row) for row in rows]
 
 
 repository = SQLiteRepository(settings.sqlite_path)

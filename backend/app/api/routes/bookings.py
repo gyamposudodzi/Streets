@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.api.dependencies import require_current_user
+from app.models.entities import User
 from app.repositories.sqlite import repository
 from app.schemas.bookings import BookingCreateRequest, BookingEventResponse, BookingResponse
 from app.services.bookings import create_booking
@@ -9,8 +11,11 @@ router = APIRouter()
 
 
 @router.post("", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
-def create_booking_route(payload: BookingCreateRequest) -> BookingResponse:
-    booking = create_booking(payload)
+def create_booking_route(
+    payload: BookingCreateRequest,
+    actor: User = Depends(require_current_user),
+) -> BookingResponse:
+    booking = create_booking(payload, buyer=actor)
     return BookingResponse.model_validate(booking.model_dump())
 
 

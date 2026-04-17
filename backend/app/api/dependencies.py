@@ -1,4 +1,4 @@
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 
 from app.domain.enums import UserRole
 from app.models.entities import User
@@ -22,3 +22,12 @@ def require_creator_owner_or_admin(actor: User, creator_id: str) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to manage this creator resource.",
         )
+
+
+def require_admin_user(actor: User = Depends(require_current_user)) -> User:
+    if actor.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access is required.",
+        )
+    return actor

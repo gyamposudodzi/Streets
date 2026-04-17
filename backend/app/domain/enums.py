@@ -35,3 +35,24 @@ class BookingStatus(StrEnum):
     ACCEPTED = "accepted"
     CANCELLED = "cancelled"
 
+
+class PaymentStatus(StrEnum):
+    REQUIRES_ACTION = "requires_action"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+
+
+class HeldFundsStatus(StrEnum):
+    HELD = "held"
+    RELEASED = "released"
+    REFUNDED = "refunded"
+
+
+class LedgerEntryType(StrEnum):
+    PAYMENT_CAPTURED = "payment_captured"
+    FUNDS_HELD = "funds_held"
+    PLATFORM_FEE = "platform_fee"
+    CREATOR_CREDIT = "creator_credit"
+    FUNDS_RELEASED = "funds_released"
+    REFUND_ISSUED = "refund_issued"

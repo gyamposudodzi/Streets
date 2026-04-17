@@ -13,6 +13,17 @@ body {
   margin: 0;
 }
 
+a {
+  color: inherit;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 1rem 2rem 0;
+}
+
 .page {
   min-height: 100vh;
   padding: 2rem;
@@ -56,6 +67,12 @@ body {
 .stack {
   display: grid;
   gap: 1rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .stats {
@@ -116,6 +133,17 @@ body {
   color: inherit;
 }
 
+.textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .button,
 .buttonLink,
 .inlineLink {
@@ -135,10 +163,24 @@ body {
   color: #fffaf4;
 }
 
+.secondaryButton {
+  background: #b48057;
+}
+
 .inlineLink {
   margin-top: 0.5rem;
   color: #7c4d28;
   font-weight: 600;
+}
+
+.sessionStatus {
+  display: inline-flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  border-radius: 999px;
+  background: rgba(255, 251, 245, 0.92);
+  box-shadow: 0 12px 30px rgba(76, 44, 20, 0.08);
 }
 
 .formShell {
@@ -180,6 +222,10 @@ h3 {
 
 @media (max-width: 700px) {
   .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .twoCol {
     grid-template-columns: 1fr;
   }
 }

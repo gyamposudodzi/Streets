@@ -3,19 +3,12 @@ from datetime import timedelta
 from fastapi import HTTPException, status
 
 from app.domain.enums import BookingStatus
-from app.models.entities import Booking
+from app.models.entities import Booking, User
 from app.repositories.sqlite import repository
 from app.schemas.bookings import BookingCreateRequest
 
 
-def create_booking(payload: BookingCreateRequest) -> Booking:
-    buyer = repository.get_user(payload.buyer_id)
-    if buyer is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Buyer not found.",
-        )
-
+def create_booking(payload: BookingCreateRequest, buyer: User) -> Booking:
     service = repository.get_service(payload.service_id)
     if service is None:
         raise HTTPException(

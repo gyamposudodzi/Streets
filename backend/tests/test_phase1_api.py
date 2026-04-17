@@ -58,7 +58,8 @@ def test_register_login_and_create_booking_flow() -> None:
     service_id = repository.list_services()[0].id
     booking_response = client.post(
         "/api/v1/bookings",
-        json={"buyer_id": user["id"], "service_id": service_id},
+        json={"service_id": service_id},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert booking_response.status_code == 201
     booking = booking_response.json()
@@ -211,3 +212,95 @@ def test_creator_mutations_require_owner_or_admin() -> None:
         headers=creator_headers,
     )
     assert allowed_profile.status_code == 200
+
+
+def test_admin_dashboard_requires_admin_and_returns_data() -> None:
+    unauthorized = client.get("/api/v1/admin/dashboard")
+    assert unauthorized.status_code == 401
+
+    non_admin_register = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "dashboard-user@streets.local",
+            "role": "user",
+            "is_age_verified": True,
+        },
+    )
+    assert non_admin_register.status_code == 200
+    non_admin_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "dashboard-user@streets.local"},
+    )
+    forbidden = client.get(
+        "/api/v1/admin/dashboard",
+        headers={"Authorization": f"Bearer {non_admin_login.json()['access_token']}"},
+    )
+    assert forbidden.status_code == 403
+
+    admin_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@streets.local"},
+    )
+    assert admin_login.status_code == 200
+    admin_response = client.get(
+        "/api/v1/admin/dashboard",
+        headers={"Authorization": f"Bearer {admin_login.json()['access_token']}"},
+    )
+    assert admin_response.status_code == 200
+    dashboard = admin_response.json()
+    assert dashboard["overview"]["total_users"] >= 3
+    assert len(dashboard["services"]) >= 3
+
+
+def test_simulated_payment_moves_booking_to_held_funds() -> None:
+    register_response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "payment-buyer@streets.local",
+            "role": "user",
+            "is_age_verified": True,
+        },
+    )
+    assert register_response.status_code == 200
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "payment-buyer@streets.local"},
+    )
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    service_id = repository.list_services()[0].id
+    booking_response = client.post(
+        "/api/v1/bookings",
+        json={"service_id": service_id},
+        headers=headers,
+    )
+    assert booking_response.status_code == 201
+    booking = booking_response.json()
+    assert booking["status"] == "pending_payment"
+
+    intent_response = client.post(
+        "/api/v1/payments/create-intent",
+        json={"booking_id": booking["id"]},
+        headers=headers,
+    )
+    assert intent_response.status_code == 200
+    payment = intent_response.json()["payment"]
+    assert payment["status"] == "requires_action"
+
+    success_response = client.post(
+        f"/api/v1/payments/{payment['id']}/simulate-success",
+        headers=headers,
+    )
+    assert success_response.status_code == 200
+    assert success_response.json()["status"] == "succeeded"
+
+    updated_booking_response = client.get(f"/api/v1/bookings/{booking['id']}")
+    assert updated_booking_response.status_code == 200
+    assert updated_booking_response.json()["status"] == "paid_pending_acceptance"
+
+    payment_state_response = client.get(f"/api/v1/payments/bookings/{booking['id']}")
+    assert payment_state_response.status_code == 200
+    payment_state = payment_state_response.json()
+    assert len(payment_state["held_funds"]) == 1
+    assert len(payment_state["ledger_entries"]) == 3

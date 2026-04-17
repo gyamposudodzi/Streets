@@ -64,7 +64,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 <h3>{service.title}</h3>
                 <p>{service.description}</p>
                 <p>
-                  {service.category} · {service.duration_minutes} min
+                  {service.category} - {service.duration_minutes} min
                 </p>
                 <p>{formatPrice(service.price, service.currency)}</p>
                 <Link href={`/services/${service.id}`} className="inlineLink">

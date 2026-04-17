@@ -29,6 +29,12 @@ export type CreatorSummary = {
   average_rating: number;
 };
 
+export type CreatorProfile = CreatorSummary & {
+  bio: string;
+  payout_status: VerificationStatus;
+  created_at: string;
+};
+
 export type Service = {
   id: string;
   creator_id: string;
@@ -73,4 +79,36 @@ export type BookingEvent = {
   actor_user_id: string;
   detail: string;
   created_at: string;
+};
+
+export type AppUser = {
+  id: string;
+  email: string;
+  phone: string | null;
+  role: UserRole;
+  status: string;
+  is_age_verified: boolean;
+  email_verified: boolean;
+  created_at: string;
+};
+
+export type AuthSession = {
+  access_token: string;
+  token_type: "bearer";
+  user: AppUser;
+};
+
+export type AdminOverview = {
+  total_users: number;
+  total_creators: number;
+  total_services: number;
+  total_bookings: number;
+};
+
+export type AdminDashboard = {
+  overview: AdminOverview;
+  users: AppUser[];
+  creators: CreatorSummary[];
+  services: Service[];
+  bookings: Booking[];
 };

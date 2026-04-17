@@ -45,3 +45,54 @@ body {
   background: rgba(255, 255, 255, 0.75);
   box-shadow: 0 12px 30px rgba(32, 64, 44, 0.1);
 }
+
+.stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(65, 104, 74, 0.2);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.button {
+  padding: 0.85rem 1.1rem;
+  border: none;
+  border-radius: 0.9rem;
+  background: #41684a;
+  color: #f6fbf7;
+  cursor: pointer;
+}
+
+.secondaryButton {
+  background: #789580;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(32, 64, 44, 0.08);
+}
+
+.errorText {
+  color: #a22718;
+}

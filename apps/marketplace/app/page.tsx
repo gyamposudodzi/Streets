@@ -68,7 +68,7 @@ export default async function MarketplaceHome() {
                 <h3>{creator.display_name}</h3>
                 <p>{creator.service_region}</p>
                 <p>
-                  {creator.country} · {creator.verification_status}
+                  {creator.country} - {creator.verification_status}
                 </p>
                 <p>Rating {creator.average_rating.toFixed(1)}</p>
                 <Link href={`/search?creator=${creator.user_id}`} className="inlineLink">
@@ -100,7 +100,7 @@ export default async function MarketplaceHome() {
                 <h3>{service.title}</h3>
                 <p>{service.description}</p>
                 <p>
-                  {service.category} · {service.duration_minutes} min
+                  {service.category} - {service.duration_minutes} min
                 </p>
                 <p>{formatPrice(service.price, service.currency)}</p>
                 <Link href={`/services/${service.id}`} className="inlineLink">

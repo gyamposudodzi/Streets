@@ -75,6 +75,40 @@ CREATE TABLE IF NOT EXISTS booking_events (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS payments (
+    id TEXT PRIMARY KEY,
+    booking_id TEXT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    provider_payment_id TEXT NOT NULL,
+    gross_amount INTEGER NOT NULL,
+    platform_fee INTEGER NOT NULL,
+    creator_amount INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS held_funds (
+    id TEXT PRIMARY KEY,
+    booking_id TEXT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    payment_id TEXT NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
+    amount INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ledger_entries (
+    id TEXT PRIMARY KEY,
+    account_type TEXT NOT NULL,
+    account_id TEXT NOT NULL,
+    booking_id TEXT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    entry_type TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_services_creator_id ON services (creator_id);
 CREATE INDEX IF NOT EXISTS idx_services_category ON services (category);
 CREATE INDEX IF NOT EXISTS idx_services_fulfillment_type ON services (fulfillment_type);
@@ -82,3 +116,6 @@ CREATE INDEX IF NOT EXISTS idx_slots_service_id ON availability_slots (service_i
 CREATE INDEX IF NOT EXISTS idx_bookings_buyer_id ON bookings (buyer_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_creator_id ON bookings (creator_id);
 CREATE INDEX IF NOT EXISTS idx_booking_events_booking_id ON booking_events (booking_id);
+CREATE INDEX IF NOT EXISTS idx_payments_booking_id ON payments (booking_id);
+CREATE INDEX IF NOT EXISTS idx_held_funds_booking_id ON held_funds (booking_id);
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_booking_id ON ledger_entries (booking_id);

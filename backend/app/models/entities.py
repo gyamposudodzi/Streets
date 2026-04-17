@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field
 from app.domain.enums import (
     BookingStatus,
     FulfillmentType,
+    HeldFundsStatus,
+    LedgerEntryType,
+    PaymentStatus,
     UserRole,
     UserStatus,
     VerificationStatus,
@@ -90,4 +93,38 @@ class BookingEvent(BaseModel):
     event_type: str
     actor_user_id: str
     detail: str
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class Payment(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    booking_id: str
+    provider: str
+    provider_payment_id: str
+    gross_amount: int
+    platform_fee: int
+    creator_amount: int
+    currency: str = "USD"
+    status: PaymentStatus = PaymentStatus.REQUIRES_ACTION
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class HeldFunds(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    booking_id: str
+    payment_id: str
+    amount: int
+    currency: str = "USD"
+    status: HeldFundsStatus = HeldFundsStatus.HELD
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class LedgerEntry(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    account_type: str
+    account_id: str
+    booking_id: str
+    entry_type: LedgerEntryType
+    amount: int
+    currency: str = "USD"
     created_at: datetime = Field(default_factory=utc_now)
