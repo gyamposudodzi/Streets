@@ -8,6 +8,7 @@ import {
   adminRefundBooking,
   adminRejectService,
   adminReleaseBooking,
+  adminResolveDispute,
   adminResolveReport,
   cancelBooking,
   getAdminDashboard,
@@ -220,6 +221,21 @@ export function AdminDashboard() {
     }
   }
 
+  async function handleResolveDispute(disputeId: string, resolution: "release" | "refund") {
+    if (!session) {
+      return;
+    }
+    setError("");
+    setMessage("");
+    try {
+      await adminResolveDispute(disputeId, resolution, session.access_token);
+      await reloadDashboard(session.access_token);
+      setMessage(`Dispute resolved with ${resolution}.`);
+    } catch {
+      setError("Dispute resolution failed. Confirm the booking has held funds.");
+    }
+  }
+
   if (!session) {
     return (
       <section className="hero">
@@ -302,6 +318,10 @@ export function AdminDashboard() {
             <article className="card">
               <h2>Open reports</h2>
               <p>{dashboard.overview.open_reports}</p>
+            </article>
+            <article className="card">
+              <h2>Open disputes</h2>
+              <p>{dashboard.overview.open_disputes}</p>
             </article>
           </div>
 
@@ -407,6 +427,43 @@ export function AdminDashboard() {
               ))
             ) : (
               <p>No reports yet.</p>
+            )}
+          </section>
+
+          <section className="card stack">
+            <h2>Disputes</h2>
+            {dashboard.disputes.length > 0 ? (
+              dashboard.disputes.map((dispute) => (
+                <div key={dispute.id} className="stack bookingRow">
+                  <div className="row">
+                    <span>{dispute.booking_id}</span>
+                    <span>{dispute.reason}</span>
+                    <span>{dispute.status}</span>
+                  </div>
+                  {dispute.details ? <p>{dispute.details}</p> : null}
+                  {dispute.resolution ? <p>Resolution: {dispute.resolution}</p> : null}
+                  {dispute.status !== "resolved" ? (
+                    <div className="actions">
+                      <button
+                        className="button"
+                        type="button"
+                        onClick={() => handleResolveDispute(dispute.id, "release")}
+                      >
+                        Release funds
+                      </button>
+                      <button
+                        className="button secondaryButton"
+                        type="button"
+                        onClick={() => handleResolveDispute(dispute.id, "refund")}
+                      >
+                        Refund buyer
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ))
+            ) : (
+              <p>No disputes yet.</p>
             )}
           </section>
 

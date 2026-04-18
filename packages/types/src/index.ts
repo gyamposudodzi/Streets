@@ -12,6 +12,10 @@ export type BookingStatus =
   | "pending_payment"
   | "paid_pending_acceptance"
   | "accepted"
+  | "in_progress"
+  | "delivered"
+  | "awaiting_release"
+  | "disputed"
   | "cancelled"
   | "released"
   | "refunded";
@@ -176,6 +180,22 @@ export type Report = {
   resolved_at: string | null;
 };
 
+export type DisputeStatus = "open" | "reviewing" | "resolved";
+
+export type DisputeResolution = "release" | "refund";
+
+export type Dispute = {
+  id: string;
+  booking_id: string;
+  opened_by_user_id: string;
+  status: DisputeStatus;
+  reason: string;
+  details: string | null;
+  resolution: DisputeResolution | null;
+  created_at: string;
+  resolved_at: string | null;
+};
+
 export type AppUser = {
   id: string;
   email: string;
@@ -199,6 +219,7 @@ export type AdminOverview = {
   total_services: number;
   total_bookings: number;
   open_reports: number;
+  open_disputes: number;
 };
 
 export type AdminDashboard = {
@@ -208,4 +229,5 @@ export type AdminDashboard = {
   services: Service[];
   bookings: Booking[];
   reports: Report[];
+  disputes: Dispute[];
 };

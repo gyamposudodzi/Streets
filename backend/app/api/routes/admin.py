@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies import require_admin_user
@@ -7,6 +9,7 @@ from app.schemas.admin import AdminDashboardResponse, AdminOverviewResponse
 from app.schemas.auth import UserResponse
 from app.schemas.bookings import BookingResponse
 from app.schemas.creators import CreatorSummaryResponse
+from app.schemas.disputes import DisputeResolveRequest, DisputeResponse
 from app.schemas.services import ServiceResponse
 from app.schemas.payments import HeldFundsResponse
 from app.schemas.reports import ReportResolveRequest, ReportResponse
@@ -24,12 +27,14 @@ def admin_overview(_: User = Depends(require_admin_user)) -> AdminOverviewRespon
     services = repository.list_services()
     bookings = repository.list_bookings()
     reports = repository.list_reports()
+    disputes = repository.list_disputes()
     return AdminOverviewResponse(
         total_users=len(users),
         total_creators=len(creators),
         total_services=len(services),
         total_bookings=len(bookings),
         open_reports=len([report for report in reports if report.status == "open"]),
+        open_disputes=len([dispute for dispute in disputes if dispute.status == "open"]),
     )
 
 
@@ -98,6 +103,14 @@ def admin_reports(_: User = Depends(require_admin_user)) -> list[ReportResponse]
     ]
 
 
+@router.get("/disputes", response_model=list[DisputeResponse])
+def admin_disputes(_: User = Depends(require_admin_user)) -> list[DisputeResponse]:
+    return [
+        DisputeResponse.model_validate(dispute.model_dump())
+        for dispute in repository.list_disputes()
+    ]
+
+
 @router.get("/creators/{creator_id}/bookings", response_model=list[BookingResponse])
 def admin_creator_bookings(
     creator_id: str,
@@ -117,6 +130,7 @@ def admin_dashboard(_: User = Depends(require_admin_user)) -> AdminDashboardResp
     services = repository.list_services()
     bookings = repository.list_bookings()
     reports = repository.list_reports()
+    disputes = repository.list_disputes()
 
     return AdminDashboardResponse(
         overview=AdminOverviewResponse(
@@ -125,6 +139,7 @@ def admin_dashboard(_: User = Depends(require_admin_user)) -> AdminDashboardResp
             total_services=len(services),
             total_bookings=len(bookings),
             open_reports=len([report for report in reports if report.status == "open"]),
+            open_disputes=len([dispute for dispute in disputes if dispute.status == "open"]),
         ),
         users=[UserResponse.model_validate(user.model_dump()) for user in users],
         creators=[
@@ -139,6 +154,9 @@ def admin_dashboard(_: User = Depends(require_admin_user)) -> AdminDashboardResp
         reports=[
             ReportResponse.model_validate(report.model_dump()) for report in reports
         ],
+        disputes=[
+            DisputeResponse.model_validate(dispute.model_dump()) for dispute in disputes
+        ],
     )
 
 
@@ -150,6 +168,33 @@ def admin_resolve_report(
 ) -> ReportResponse:
     report = resolve_report(report_id, payload)
     return ReportResponse.model_validate(report.model_dump())
+
+
+@router.post("/disputes/{dispute_id}/resolve", response_model=DisputeResponse)
+def admin_resolve_dispute(
+    dispute_id: str,
+    payload: DisputeResolveRequest,
+    actor: User = Depends(require_admin_user),
+) -> DisputeResponse:
+    dispute = repository.get_dispute(dispute_id)
+    if dispute is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dispute not found.",
+        )
+
+    if payload.resolution == "release":
+        release_held_funds_for_booking(dispute.booking_id, actor)
+    else:
+        refund_held_funds_for_booking(dispute.booking_id, actor)
+
+    resolved = repository.update_dispute_status(
+        dispute.id,
+        status="resolved",
+        resolution=payload.resolution,
+        resolved_at=datetime.now(UTC).isoformat(),
+    )
+    return DisputeResponse.model_validate(resolved.model_dump())
 
 
 @router.post("/bookings/{booking_id}/release", response_model=list[HeldFundsResponse])

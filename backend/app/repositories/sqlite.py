@@ -10,6 +10,7 @@ from app.models.entities import (
     Booking,
     BookingEvent,
     CreatorProfile,
+    Dispute,
     HeldFunds,
     LedgerEntry,
     Message,
@@ -213,6 +214,11 @@ class SQLiteRepository:
         if row is None:
             return None
         return Report.model_validate(dict(row))
+
+    def _to_dispute(self, row: sqlite3.Row | None) -> Dispute | None:
+        if row is None:
+            return None
+        return Dispute.model_validate(dict(row))
 
     def list_creators(self) -> list[CreatorProfile]:
         with self._connect() as connection:
@@ -608,16 +614,27 @@ class SQLiteRepository:
         actor_user_id: str,
         event_type: str,
         detail: str,
+        release_at: object | None = None,
     ) -> Booking | None:
         booking = self.get_booking(booking_id)
         if booking is None:
             return None
 
         with self._connect() as connection:
-            connection.execute(
-                "UPDATE bookings SET status = ? WHERE id = ?",
-                (status, booking_id),
-            )
+            if release_at is not None:
+                connection.execute(
+                    "UPDATE bookings SET status = ?, release_at = ? WHERE id = ?",
+                    (
+                        status,
+                        release_at.isoformat() if hasattr(release_at, "isoformat") else release_at,
+                        booking_id,
+                    ),
+                )
+            else:
+                connection.execute(
+                    "UPDATE bookings SET status = ? WHERE id = ?",
+                    (status, booking_id),
+                )
             event = BookingEvent(
                 booking_id=booking_id,
                 event_type=event_type,
@@ -833,6 +850,70 @@ class SQLiteRepository:
                 (status, resolved_at, report_id),
             )
         return self.get_report(report_id)
+
+    def create_dispute(self, dispute: Dispute) -> Dispute:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO disputes (
+                    id, booking_id, opened_by_user_id, status, reason, details,
+                    resolution, created_at, resolved_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    dispute.id,
+                    dispute.booking_id,
+                    dispute.opened_by_user_id,
+                    dispute.status,
+                    dispute.reason,
+                    dispute.details,
+                    dispute.resolution,
+                    dispute.created_at.isoformat(),
+                    dispute.resolved_at.isoformat() if dispute.resolved_at else None,
+                ),
+            )
+        return dispute
+
+    def list_disputes(self) -> list[Dispute]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM disputes ORDER BY created_at DESC"
+            ).fetchall()
+        return [self._to_dispute(row) for row in rows]
+
+    def list_disputes_for_booking(self, booking_id: str) -> list[Dispute]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM disputes WHERE booking_id = ? ORDER BY created_at DESC",
+                (booking_id,),
+            ).fetchall()
+        return [self._to_dispute(row) for row in rows]
+
+    def get_dispute(self, dispute_id: str) -> Dispute | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM disputes WHERE id = ?",
+                (dispute_id,),
+            ).fetchone()
+        return self._to_dispute(row)
+
+    def update_dispute_status(
+        self,
+        dispute_id: str,
+        status: str,
+        resolution: str | None,
+        resolved_at: str | None,
+    ) -> Dispute | None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                UPDATE disputes
+                SET status = ?, resolution = ?, resolved_at = ?
+                WHERE id = ?
+                """,
+                (status, resolution, resolved_at, dispute_id),
+            )
+        return self.get_dispute(dispute_id)
 
 
 repository = SQLiteRepository(settings.sqlite_path)

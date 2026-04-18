@@ -33,6 +33,10 @@ class BookingStatus(StrEnum):
     PENDING_PAYMENT = "pending_payment"
     PAID_PENDING_ACCEPTANCE = "paid_pending_acceptance"
     ACCEPTED = "accepted"
+    IN_PROGRESS = "in_progress"
+    DELIVERED = "delivered"
+    AWAITING_RELEASE = "awaiting_release"
+    DISPUTED = "disputed"
     CANCELLED = "cancelled"
     RELEASED = "released"
     REFUNDED = "refunded"
@@ -73,6 +77,17 @@ class ReportStatus(StrEnum):
     REVIEWING = "reviewing"
     RESOLVED = "resolved"
     DISMISSED = "dismissed"
+
+
+class DisputeStatus(StrEnum):
+    OPEN = "open"
+    REVIEWING = "reviewing"
+    RESOLVED = "resolved"
+
+
+class DisputeResolution(StrEnum):
+    RELEASE = "release"
+    REFUND = "refund"
 
 
 class ServiceModerationStatus(StrEnum):

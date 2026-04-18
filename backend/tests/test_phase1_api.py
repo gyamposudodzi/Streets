@@ -469,6 +469,125 @@ def test_creator_can_accept_paid_booking() -> None:
     assert accept_response.json()["status"] == "accepted"
 
 
+def test_booking_delivery_completion_and_dispute_resolution_flow() -> None:
+    booking_id, admin_headers = create_paid_booking_for_admin_action(
+        "lifecycle-buyer@streets.local"
+    )
+    creator_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "creator@streets.local"},
+    )
+    creator_headers = {
+        "Authorization": f"Bearer {creator_login.json()['access_token']}"
+    }
+
+    accept_response = client.post(
+        f"/api/v1/bookings/{booking_id}/accept",
+        headers=creator_headers,
+    )
+    assert accept_response.status_code == 200
+    assert accept_response.json()["status"] == "accepted"
+
+    start_response = client.post(
+        f"/api/v1/bookings/{booking_id}/start",
+        headers=creator_headers,
+    )
+    assert start_response.status_code == 200
+    assert start_response.json()["status"] == "in_progress"
+
+    deliver_response = client.post(
+        f"/api/v1/bookings/{booking_id}/deliver",
+        headers=creator_headers,
+    )
+    assert deliver_response.status_code == 200
+    assert deliver_response.json()["status"] == "awaiting_release"
+    assert deliver_response.json()["release_at"] is not None
+
+    buyer_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "lifecycle-buyer@streets.local"},
+    )
+    buyer_headers = {
+        "Authorization": f"Bearer {buyer_login.json()['access_token']}"
+    }
+    complete_response = client.post(
+        f"/api/v1/bookings/{booking_id}/complete",
+        headers=buyer_headers,
+    )
+    assert complete_response.status_code == 200
+    assert complete_response.json()["status"] == "delivered"
+
+    release_response = client.post(
+        f"/api/v1/admin/bookings/{booking_id}/release",
+        headers=admin_headers,
+    )
+    assert release_response.status_code == 200
+    assert release_response.json()[0]["status"] == "released"
+
+    events_response = client.get(f"/api/v1/bookings/{booking_id}/events")
+    event_types = [event["event_type"] for event in events_response.json()]
+    assert "booking.in_progress" in event_types
+    assert "service.delivered" in event_types
+    assert "service.completed" in event_types
+
+
+def test_booking_dispute_blocks_release_until_admin_resolution() -> None:
+    booking_id, admin_headers = create_paid_booking_for_admin_action(
+        "dispute-buyer@streets.local"
+    )
+    creator_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "creator@streets.local"},
+    )
+    creator_headers = {
+        "Authorization": f"Bearer {creator_login.json()['access_token']}"
+    }
+    client.post(f"/api/v1/bookings/{booking_id}/accept", headers=creator_headers)
+    client.post(f"/api/v1/bookings/{booking_id}/deliver", headers=creator_headers)
+
+    buyer_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "dispute-buyer@streets.local"},
+    )
+    buyer_headers = {
+        "Authorization": f"Bearer {buyer_login.json()['access_token']}"
+    }
+    dispute_response = client.post(
+        f"/api/v1/bookings/{booking_id}/dispute",
+        json={
+            "reason": "Delivery issue",
+            "details": "Buyer requested admin review before release.",
+        },
+        headers=buyer_headers,
+    )
+    assert dispute_response.status_code == 200
+    dispute = dispute_response.json()
+    assert dispute["status"] == "open"
+
+    booking_response = client.get(f"/api/v1/bookings/{booking_id}")
+    assert booking_response.json()["status"] == "disputed"
+
+    dashboard_response = client.get("/api/v1/admin/dashboard", headers=admin_headers)
+    assert dashboard_response.status_code == 200
+    assert dashboard_response.json()["overview"]["open_disputes"] == 1
+
+    resolve_response = client.post(
+        f"/api/v1/admin/disputes/{dispute['id']}/resolve",
+        json={"resolution": "refund"},
+        headers=admin_headers,
+    )
+    assert resolve_response.status_code == 200
+    assert resolve_response.json()["status"] == "resolved"
+    assert resolve_response.json()["resolution"] == "refund"
+
+    payment_state_response = client.get(f"/api/v1/payments/bookings/{booking_id}")
+    ledger_types = [
+        entry["entry_type"]
+        for entry in payment_state_response.json()["ledger_entries"]
+    ]
+    assert "refund_issued" in ledger_types
+
+
 def test_participant_can_cancel_booking_before_terminal_state() -> None:
     register_response = client.post(
         "/api/v1/auth/register",

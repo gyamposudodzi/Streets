@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 
 from app.domain.enums import (
     BookingStatus,
+    DisputeResolution,
+    DisputeStatus,
     FulfillmentType,
     HeldFundsStatus,
     LedgerEntryType,
@@ -151,5 +153,17 @@ class Report(BaseModel):
     details: str | None = None
     status: ReportStatus = ReportStatus.OPEN
     risk_score: int = 0
+    created_at: datetime = Field(default_factory=utc_now)
+    resolved_at: datetime | None = None
+
+
+class Dispute(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    booking_id: str
+    opened_by_user_id: str
+    status: DisputeStatus = DisputeStatus.OPEN
+    reason: str
+    details: str | None = None
+    resolution: DisputeResolution | None = None
     created_at: datetime = Field(default_factory=utc_now)
     resolved_at: datetime | None = None

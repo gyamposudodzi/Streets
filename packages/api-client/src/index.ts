@@ -10,6 +10,8 @@ import type {
   BookingPaymentState,
   CreatorProfile,
   CreatorSummary,
+  Dispute,
+  DisputeResolution,
   Payment,
   PaymentIntent,
   HeldFunds,
@@ -116,6 +118,50 @@ export function acceptBooking(bookingId: string, accessToken: string) {
 export function cancelBooking(bookingId: string, accessToken: string) {
   return fetchJson<Booking>(`${apiRoutes.bookings}/${bookingId}/cancel`, {
     method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function startBooking(bookingId: string, accessToken: string) {
+  return fetchJson<Booking>(`${apiRoutes.bookings}/${bookingId}/start`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function deliverBooking(bookingId: string, accessToken: string) {
+  return fetchJson<Booking>(`${apiRoutes.bookings}/${bookingId}/deliver`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function completeBooking(bookingId: string, accessToken: string) {
+  return fetchJson<Booking>(`${apiRoutes.bookings}/${bookingId}/complete`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function disputeBooking(
+  bookingId: string,
+  input: {
+    reason: string;
+    details?: string;
+  },
+  accessToken: string
+) {
+  return fetchJson<Dispute>(`${apiRoutes.bookings}/${bookingId}/dispute`, {
+    method: "POST",
+    body: JSON.stringify(input),
     headers: {
       Authorization: `Bearer ${accessToken}`
     }
@@ -349,6 +395,20 @@ export function adminApproveService(serviceId: string, accessToken: string) {
 export function adminRejectService(serviceId: string, accessToken: string) {
   return fetchJson<Service>(`/api/v1/admin/services/${serviceId}/reject`, {
     method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function adminResolveDispute(
+  disputeId: string,
+  resolution: DisputeResolution,
+  accessToken: string
+) {
+  return fetchJson<Dispute>(`/api/v1/admin/disputes/${disputeId}/resolve`, {
+    method: "POST",
+    body: JSON.stringify({ resolution }),
     headers: {
       Authorization: `Bearer ${accessToken}`
     }

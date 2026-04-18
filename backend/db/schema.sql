@@ -131,6 +131,18 @@ CREATE TABLE reports (
     resolved_at TIMESTAMPTZ
 );
 
+CREATE TABLE disputes (
+    id UUID PRIMARY KEY,
+    booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    opened_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    details TEXT,
+    resolution TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ
+);
+
 CREATE INDEX idx_services_creator_id ON services (creator_id);
 CREATE INDEX idx_services_category ON services (category);
 CREATE INDEX idx_services_fulfillment_type ON services (fulfillment_type);
@@ -144,3 +156,5 @@ CREATE INDEX idx_ledger_entries_booking_id ON ledger_entries (booking_id);
 CREATE INDEX idx_messages_booking_id ON messages (booking_id);
 CREATE INDEX idx_reports_status ON reports (status);
 CREATE INDEX idx_reports_target ON reports (target_type, target_id);
+CREATE INDEX idx_disputes_booking_id ON disputes (booking_id);
+CREATE INDEX idx_disputes_status ON disputes (status);
