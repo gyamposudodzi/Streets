@@ -45,3 +45,63 @@ def create_booking(payload: BookingCreateRequest, buyer: User) -> Booking:
     repository.create_booking(booking, actor_user_id=buyer.id)
     updated_booking = repository.mark_booking_pending_payment(booking.id, actor_user_id=buyer.id)
     return updated_booking
+
+
+def accept_booking(booking_id: str, actor: User) -> Booking:
+    booking = repository.get_booking(booking_id)
+    if booking is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking not found.",
+        )
+    if actor.role != "admin" and booking.creator_id != actor.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the creator or an admin can accept this booking.",
+        )
+    if booking.status != BookingStatus.PAID_PENDING_ACCEPTANCE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only paid bookings pending acceptance can be accepted.",
+        )
+
+    updated = repository.update_booking_status(
+        booking.id,
+        BookingStatus.ACCEPTED,
+        actor_user_id=actor.id,
+        event_type="booking.accepted",
+        detail="Creator accepted the booking.",
+    )
+    return updated
+
+
+def cancel_booking(booking_id: str, actor: User) -> Booking:
+    booking = repository.get_booking(booking_id)
+    if booking is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking not found.",
+        )
+    if actor.role != "admin" and actor.id not in {booking.buyer_id, booking.creator_id}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only a booking participant or admin can cancel this booking.",
+        )
+    if booking.status in {
+        BookingStatus.RELEASED,
+        BookingStatus.REFUNDED,
+        BookingStatus.CANCELLED,
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Booking cannot be cancelled from its current state.",
+        )
+
+    updated = repository.update_booking_status(
+        booking.id,
+        BookingStatus.CANCELLED,
+        actor_user_id=actor.id,
+        event_type="booking.cancelled",
+        detail="Booking was cancelled.",
+    )
+    return updated

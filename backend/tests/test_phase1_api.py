@@ -304,3 +304,316 @@ def test_simulated_payment_moves_booking_to_held_funds() -> None:
     payment_state = payment_state_response.json()
     assert len(payment_state["held_funds"]) == 1
     assert len(payment_state["ledger_entries"]) == 3
+
+
+def create_paid_booking_for_admin_action(email: str) -> tuple[str, dict[str, str]]:
+    register_response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "role": "user",
+            "is_age_verified": True,
+        },
+    )
+    assert register_response.status_code == 200
+    login_response = client.post("/api/v1/auth/login", json={"email": email})
+    buyer_headers = {"Authorization": f"Bearer {login_response.json()['access_token']}"}
+    service_id = repository.list_services()[0].id
+    booking_response = client.post(
+        "/api/v1/bookings",
+        json={"service_id": service_id},
+        headers=buyer_headers,
+    )
+    booking_id = booking_response.json()["id"]
+    intent_response = client.post(
+        "/api/v1/payments/create-intent",
+        json={"booking_id": booking_id},
+        headers=buyer_headers,
+    )
+    payment_id = intent_response.json()["payment"]["id"]
+    success_response = client.post(
+        f"/api/v1/payments/{payment_id}/simulate-success",
+        headers=buyer_headers,
+    )
+    assert success_response.status_code == 200
+
+    admin_login = client.post("/api/v1/auth/login", json={"email": "admin@streets.local"})
+    admin_headers = {"Authorization": f"Bearer {admin_login.json()['access_token']}"}
+    return booking_id, admin_headers
+
+
+def test_admin_can_release_held_funds() -> None:
+    booking_id, admin_headers = create_paid_booking_for_admin_action(
+        "release-buyer@streets.local"
+    )
+
+    release_response = client.post(
+        f"/api/v1/admin/bookings/{booking_id}/release",
+        headers=admin_headers,
+    )
+    assert release_response.status_code == 200
+    assert release_response.json()[0]["status"] == "released"
+
+    booking_response = client.get(f"/api/v1/bookings/{booking_id}")
+    assert booking_response.json()["status"] == "released"
+
+    payment_state_response = client.get(f"/api/v1/payments/bookings/{booking_id}")
+    ledger_types = [
+        entry["entry_type"]
+        for entry in payment_state_response.json()["ledger_entries"]
+    ]
+    assert "funds_released" in ledger_types
+
+
+def test_admin_can_refund_held_funds() -> None:
+    booking_id, admin_headers = create_paid_booking_for_admin_action(
+        "refund-buyer@streets.local"
+    )
+
+    refund_response = client.post(
+        f"/api/v1/admin/bookings/{booking_id}/refund",
+        headers=admin_headers,
+    )
+    assert refund_response.status_code == 200
+    assert refund_response.json()[0]["status"] == "refunded"
+
+    booking_response = client.get(f"/api/v1/bookings/{booking_id}")
+    assert booking_response.json()["status"] == "refunded"
+
+    payment_state_response = client.get(f"/api/v1/payments/bookings/{booking_id}")
+    ledger_types = [
+        entry["entry_type"]
+        for entry in payment_state_response.json()["ledger_entries"]
+    ]
+    assert "refund_issued" in ledger_types
+
+
+def test_creator_can_accept_paid_booking() -> None:
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "accept-creator@streets.local",
+            "role": "creator",
+            "is_age_verified": True,
+        },
+    )
+    creator_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "accept-creator@streets.local"},
+    )
+    creator_headers = {
+        "Authorization": f"Bearer {creator_login.json()['access_token']}"
+    }
+    creator_id = creator_login.json()["user"]["id"]
+    client.put(
+        f"/api/v1/creators/{creator_id}",
+        json={
+            "display_name": "Accept Creator",
+            "bio": "Booking acceptance test.",
+            "country": "US",
+            "service_region": "Austin",
+        },
+        headers=creator_headers,
+    )
+    service_response = client.post(
+        f"/api/v1/services/creator/{creator_id}",
+        json={
+            "title": "Accepted service",
+            "description": "Paid booking acceptance.",
+            "category": "consulting",
+            "duration_minutes": 45,
+            "price": 15000,
+            "currency": "USD",
+            "fulfillment_type": "video",
+        },
+        headers=creator_headers,
+    )
+
+    buyer_register = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "accept-buyer@streets.local",
+            "role": "user",
+            "is_age_verified": True,
+        },
+    )
+    assert buyer_register.status_code == 200
+    buyer_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "accept-buyer@streets.local"},
+    )
+    buyer_headers = {
+        "Authorization": f"Bearer {buyer_login.json()['access_token']}"
+    }
+    booking_response = client.post(
+        "/api/v1/bookings",
+        json={"service_id": service_response.json()["id"]},
+        headers=buyer_headers,
+    )
+    intent_response = client.post(
+        "/api/v1/payments/create-intent",
+        json={"booking_id": booking_response.json()["id"]},
+        headers=buyer_headers,
+    )
+    client.post(
+        f"/api/v1/payments/{intent_response.json()['payment']['id']}/simulate-success",
+        headers=buyer_headers,
+    )
+
+    accept_response = client.post(
+        f"/api/v1/bookings/{booking_response.json()['id']}/accept",
+        headers=creator_headers,
+    )
+    assert accept_response.status_code == 200
+    assert accept_response.json()["status"] == "accepted"
+
+
+def test_participant_can_cancel_booking_before_terminal_state() -> None:
+    register_response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "cancel-buyer@streets.local",
+            "role": "user",
+            "is_age_verified": True,
+        },
+    )
+    assert register_response.status_code == 200
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "cancel-buyer@streets.local"},
+    )
+    headers = {"Authorization": f"Bearer {login_response.json()['access_token']}"}
+    service_id = repository.list_services()[0].id
+    booking_response = client.post(
+        "/api/v1/bookings",
+        json={"service_id": service_id},
+        headers=headers,
+    )
+
+    cancel_response = client.post(
+        f"/api/v1/bookings/{booking_response.json()['id']}/cancel",
+        headers=headers,
+    )
+    assert cancel_response.status_code == 200
+    assert cancel_response.json()["status"] == "cancelled"
+
+
+def test_booking_messages_are_limited_to_participants_and_admins() -> None:
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "chat-buyer@streets.local",
+            "role": "user",
+            "is_age_verified": True,
+        },
+    )
+    buyer_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "chat-buyer@streets.local"},
+    )
+    buyer_headers = {"Authorization": f"Bearer {buyer_login.json()['access_token']}"}
+    service = repository.list_services()[0]
+    booking_response = client.post(
+        "/api/v1/bookings",
+        json={"service_id": service.id},
+        headers=buyer_headers,
+    )
+    booking_id = booking_response.json()["id"]
+
+    buyer_message = client.post(
+        f"/api/v1/messages/bookings/{booking_id}",
+        json={"body": "Hello creator"},
+        headers=buyer_headers,
+    )
+    assert buyer_message.status_code == 201
+
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "chat-outsider@streets.local",
+            "role": "user",
+            "is_age_verified": True,
+        },
+    )
+    outsider_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "chat-outsider@streets.local"},
+    )
+    outsider_headers = {
+        "Authorization": f"Bearer {outsider_login.json()['access_token']}"
+    }
+    outsider_read = client.get(
+        f"/api/v1/messages/bookings/{booking_id}",
+        headers=outsider_headers,
+    )
+    assert outsider_read.status_code == 403
+
+    creator_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "creator@streets.local"},
+    )
+    creator_headers = {
+        "Authorization": f"Bearer {creator_login.json()['access_token']}"
+    }
+    creator_read = client.get(
+        f"/api/v1/messages/bookings/{booking_id}",
+        headers=creator_headers,
+    )
+    assert creator_read.status_code == 200
+    assert creator_read.json()[0]["body"] == "Hello creator"
+
+    admin_login = client.post("/api/v1/auth/login", json={"email": "admin@streets.local"})
+    admin_headers = {"Authorization": f"Bearer {admin_login.json()['access_token']}"}
+    admin_read = client.get(
+        f"/api/v1/messages/bookings/{booking_id}",
+        headers=admin_headers,
+    )
+    assert admin_read.status_code == 200
+
+
+def test_reports_can_be_created_and_resolved_by_admin() -> None:
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "reporter@streets.local",
+            "role": "user",
+            "is_age_verified": True,
+        },
+    )
+    reporter_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "reporter@streets.local"},
+    )
+    reporter_headers = {
+        "Authorization": f"Bearer {reporter_login.json()['access_token']}"
+    }
+    service_id = repository.list_services()[0].id
+
+    report_response = client.post(
+        "/api/v1/reports",
+        json={
+            "target_type": "service",
+            "target_id": service_id,
+            "reason": "off platform payment request",
+            "details": "The listing mentioned cash and unsafe coordination.",
+        },
+        headers=reporter_headers,
+    )
+    assert report_response.status_code == 201
+    report = report_response.json()
+    assert report["status"] == "open"
+    assert report["risk_score"] > 0
+
+    admin_login = client.post("/api/v1/auth/login", json={"email": "admin@streets.local"})
+    admin_headers = {"Authorization": f"Bearer {admin_login.json()['access_token']}"}
+    dashboard_response = client.get("/api/v1/admin/dashboard", headers=admin_headers)
+    assert dashboard_response.status_code == 200
+    assert dashboard_response.json()["overview"]["open_reports"] >= 1
+
+    resolve_response = client.post(
+        f"/api/v1/admin/reports/{report['id']}/resolve",
+        json={"status": "resolved"},
+        headers=admin_headers,
+    )
+    assert resolve_response.status_code == 200
+    assert resolve_response.json()["status"] == "resolved"

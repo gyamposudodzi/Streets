@@ -9,6 +9,8 @@ from app.domain.enums import (
     HeldFundsStatus,
     LedgerEntryType,
     PaymentStatus,
+    ReportStatus,
+    ReportTargetType,
     UserRole,
     UserStatus,
     VerificationStatus,
@@ -128,3 +130,24 @@ class LedgerEntry(BaseModel):
     amount: int
     currency: str = "USD"
     created_at: datetime = Field(default_factory=utc_now)
+
+
+class Message(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    booking_id: str
+    sender_id: str
+    body: str
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class Report(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    reporter_id: str
+    target_type: ReportTargetType
+    target_id: str
+    reason: str
+    details: str | None = None
+    status: ReportStatus = ReportStatus.OPEN
+    risk_score: int = 0
+    created_at: datetime = Field(default_factory=utc_now)
+    resolved_at: datetime | None = None

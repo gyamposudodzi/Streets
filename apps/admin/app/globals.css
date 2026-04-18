@@ -81,7 +81,7 @@ body {
 .panelHeader {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: flex-end;
   gap: 1rem;
 }
 
@@ -91,6 +91,17 @@ body {
   gap: 1rem;
   padding: 0.75rem 0;
   border-top: 1px solid rgba(32, 64, 44, 0.08);
+}
+
+.bookingRow {
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(32, 64, 44, 0.08);
+}
+
+.paymentState {
+  padding: 1rem;
+  border-radius: 0.9rem;
+  background: rgba(246, 251, 247, 0.78);
 }
 
 .errorText {

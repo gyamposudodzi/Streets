@@ -8,6 +8,10 @@ from app.schemas.auth import UserResponse
 from app.schemas.bookings import BookingResponse
 from app.schemas.creators import CreatorSummaryResponse
 from app.schemas.services import ServiceResponse
+from app.schemas.payments import HeldFundsResponse
+from app.schemas.reports import ReportResolveRequest, ReportResponse
+from app.services.payments import release_held_funds_for_booking, refund_held_funds_for_booking
+from app.services.reports import resolve_report
 
 
 router = APIRouter()
@@ -19,11 +23,13 @@ def admin_overview(_: User = Depends(require_admin_user)) -> AdminOverviewRespon
     creators = repository.list_creators()
     services = repository.list_services()
     bookings = repository.list_bookings()
+    reports = repository.list_reports()
     return AdminOverviewResponse(
         total_users=len(users),
         total_creators=len(creators),
         total_services=len(services),
         total_bookings=len(bookings),
+        open_reports=len([report for report in reports if report.status == "open"]),
     )
 
 
@@ -56,12 +62,33 @@ def admin_bookings(_: User = Depends(require_admin_user)) -> list[BookingRespons
     ]
 
 
+@router.get("/reports", response_model=list[ReportResponse])
+def admin_reports(_: User = Depends(require_admin_user)) -> list[ReportResponse]:
+    return [
+        ReportResponse.model_validate(report.model_dump())
+        for report in repository.list_reports()
+    ]
+
+
+@router.get("/creators/{creator_id}/bookings", response_model=list[BookingResponse])
+def admin_creator_bookings(
+    creator_id: str,
+    _: User = Depends(require_admin_user),
+) -> list[BookingResponse]:
+    return [
+        BookingResponse.model_validate(booking.model_dump())
+        for booking in repository.list_bookings()
+        if booking.creator_id == creator_id
+    ]
+
+
 @router.get("/dashboard", response_model=AdminDashboardResponse)
 def admin_dashboard(_: User = Depends(require_admin_user)) -> AdminDashboardResponse:
     users = repository.list_users()
     creators = repository.list_creators()
     services = repository.list_services()
     bookings = repository.list_bookings()
+    reports = repository.list_reports()
 
     return AdminDashboardResponse(
         overview=AdminOverviewResponse(
@@ -69,6 +96,7 @@ def admin_dashboard(_: User = Depends(require_admin_user)) -> AdminDashboardResp
             total_creators=len(creators),
             total_services=len(services),
             total_bookings=len(bookings),
+            open_reports=len([report for report in reports if report.status == "open"]),
         ),
         users=[UserResponse.model_validate(user.model_dump()) for user in users],
         creators=[
@@ -80,4 +108,35 @@ def admin_dashboard(_: User = Depends(require_admin_user)) -> AdminDashboardResp
         bookings=[
             BookingResponse.model_validate(booking.model_dump()) for booking in bookings
         ],
+        reports=[
+            ReportResponse.model_validate(report.model_dump()) for report in reports
+        ],
     )
+
+
+@router.post("/reports/{report_id}/resolve", response_model=ReportResponse)
+def admin_resolve_report(
+    report_id: str,
+    payload: ReportResolveRequest,
+    _: User = Depends(require_admin_user),
+) -> ReportResponse:
+    report = resolve_report(report_id, payload)
+    return ReportResponse.model_validate(report.model_dump())
+
+
+@router.post("/bookings/{booking_id}/release", response_model=list[HeldFundsResponse])
+def admin_release_booking(
+    booking_id: str,
+    actor: User = Depends(require_admin_user),
+) -> list[HeldFundsResponse]:
+    held_funds = release_held_funds_for_booking(booking_id, actor)
+    return [HeldFundsResponse.model_validate(held.model_dump()) for held in held_funds]
+
+
+@router.post("/bookings/{booking_id}/refund", response_model=list[HeldFundsResponse])
+def admin_refund_booking(
+    booking_id: str,
+    actor: User = Depends(require_admin_user),
+) -> list[HeldFundsResponse]:
+    held_funds = refund_held_funds_for_booking(booking_id, actor)
+    return [HeldFundsResponse.model_validate(held.model_dump()) for held in held_funds]

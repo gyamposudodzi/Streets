@@ -4,14 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import {
+  acceptBooking,
+  cancelBooking,
   createCreatorService,
   createServiceSlot,
   getCreator,
+  listCreatorBookings,
   listServices,
   updateCreatorService,
   upsertCreatorProfile
 } from "@streets/api-client";
-import type { AuthSession, Service } from "@streets/types";
+import type { AuthSession, Booking, Service } from "@streets/types";
 
 const sessionStorageKey = "streets.session";
 
@@ -36,6 +39,7 @@ export function CreatorDashboard() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [profile, setProfile] = useState(emptyProfile);
   const [services, setServices] = useState<Service[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [slotServiceId, setSlotServiceId] = useState("");
   const [slotStart, setSlotStart] = useState("");
   const [slotEnd, setSlotEnd] = useState("");
@@ -50,17 +54,27 @@ export function CreatorDashboard() {
   }, []);
 
   useEffect(() => {
-    if (!session || (session.user.role !== "creator" && session.user.role !== "admin")) {
+    const currentSession = session;
+    if (
+      !currentSession ||
+      (currentSession.user.role !== "creator" && currentSession.user.role !== "admin")
+    ) {
       return;
     }
+    const creatorId = currentSession.user.id;
+    const accessToken = currentSession.access_token;
 
     async function loadDashboard() {
       setError("");
       try {
         const [creatorProfile, creatorServices] = await Promise.all([
-          getCreator(session.user.id).catch(() => null),
-          listServices({ creator_id: session.user.id })
+          getCreator(creatorId).catch(() => null),
+          listServices({ creator_id: creatorId })
         ]);
+        const creatorBookings = await listCreatorBookings(
+          creatorId,
+          accessToken
+        ).catch(() => []);
 
         if (creatorProfile) {
           setProfile({
@@ -72,6 +86,7 @@ export function CreatorDashboard() {
         }
 
         setServices(creatorServices);
+        setBookings(creatorBookings);
         if (creatorServices.length > 0 && !slotServiceId) {
           setSlotServiceId(creatorServices[0].id);
         }
@@ -178,6 +193,42 @@ export function CreatorDashboard() {
       setMessage("Availability slot published.");
     } catch {
       setError("Slot publishing failed.");
+    }
+  }
+
+  async function handleAcceptBooking(bookingId: string) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      const updated = await acceptBooking(bookingId, session.access_token);
+      setBookings((current) =>
+        current.map((booking) => (booking.id === updated.id ? updated : booking))
+      );
+      setMessage("Booking accepted.");
+    } catch {
+      setError("Booking acceptance failed.");
+    }
+  }
+
+  async function handleCancelBooking(bookingId: string) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      const updated = await cancelBooking(bookingId, session.access_token);
+      setBookings((current) =>
+        current.map((booking) => (booking.id === updated.id ? updated : booking))
+      );
+      setMessage("Booking cancelled.");
+    } catch {
+      setError("Booking cancellation failed.");
     }
   }
 
@@ -370,6 +421,43 @@ export function CreatorDashboard() {
           </article>
         ))}
       </div>
+
+      <section className="card stack">
+        <h3>Incoming bookings</h3>
+        {bookings.length > 0 ? (
+          bookings.map((booking) => (
+            <article key={booking.id} className="card stack">
+              <p>{booking.id}</p>
+              <p>
+                {booking.fulfillment_type} - {booking.status}
+              </p>
+              <p>{booking.scheduled_start ?? "Flexible schedule"}</p>
+              <div className="actions">
+                {booking.status === "paid_pending_acceptance" ? (
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={() => handleAcceptBooking(booking.id)}
+                  >
+                    Accept
+                  </button>
+                ) : null}
+                {!["cancelled", "released", "refunded"].includes(booking.status) ? (
+                  <button
+                    className="button secondaryButton"
+                    type="button"
+                    onClick={() => handleCancelBooking(booking.id)}
+                  >
+                    Cancel
+                  </button>
+                ) : null}
+              </div>
+            </article>
+          ))
+        ) : (
+          <p>No bookings yet.</p>
+        )}
+      </section>
     </section>
   );
 }

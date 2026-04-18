@@ -109,6 +109,27 @@ CREATE TABLE ledger_entries (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE messages (
+    id UUID PRIMARY KEY,
+    booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE reports (
+    id UUID PRIMARY KEY,
+    reporter_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    target_type TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    details TEXT,
+    status TEXT NOT NULL,
+    risk_score INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ
+);
+
 CREATE INDEX idx_services_creator_id ON services (creator_id);
 CREATE INDEX idx_services_category ON services (category);
 CREATE INDEX idx_services_fulfillment_type ON services (fulfillment_type);
@@ -119,3 +140,6 @@ CREATE INDEX idx_booking_events_booking_id ON booking_events (booking_id);
 CREATE INDEX idx_payments_booking_id ON payments (booking_id);
 CREATE INDEX idx_held_funds_booking_id ON held_funds (booking_id);
 CREATE INDEX idx_ledger_entries_booking_id ON ledger_entries (booking_id);
+CREATE INDEX idx_messages_booking_id ON messages (booking_id);
+CREATE INDEX idx_reports_status ON reports (status);
+CREATE INDEX idx_reports_target ON reports (target_type, target_id);

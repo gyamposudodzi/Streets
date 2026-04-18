@@ -109,6 +109,27 @@ CREATE TABLE IF NOT EXISTS ledger_entries (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS messages (
+    id TEXT PRIMARY KEY,
+    booking_id TEXT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    sender_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+    id TEXT PRIMARY KEY,
+    reporter_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    target_type TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    details TEXT,
+    status TEXT NOT NULL,
+    risk_score INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    resolved_at TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_services_creator_id ON services (creator_id);
 CREATE INDEX IF NOT EXISTS idx_services_category ON services (category);
 CREATE INDEX IF NOT EXISTS idx_services_fulfillment_type ON services (fulfillment_type);
@@ -119,3 +140,6 @@ CREATE INDEX IF NOT EXISTS idx_booking_events_booking_id ON booking_events (book
 CREATE INDEX IF NOT EXISTS idx_payments_booking_id ON payments (booking_id);
 CREATE INDEX IF NOT EXISTS idx_held_funds_booking_id ON held_funds (booking_id);
 CREATE INDEX IF NOT EXISTS idx_ledger_entries_booking_id ON ledger_entries (booking_id);
+CREATE INDEX IF NOT EXISTS idx_messages_booking_id ON messages (booking_id);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports (status);
+CREATE INDEX IF NOT EXISTS idx_reports_target ON reports (target_type, target_id);

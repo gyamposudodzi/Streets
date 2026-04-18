@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { getBooking, listBookingEvents } from "@streets/api-client";
+import { BookingChat } from "../../../components/booking-chat";
+import { PaymentPanel } from "../../../components/payment-panel";
 
 type BookingDetailPageProps = {
   params: Promise<{ bookingId: string }>;
@@ -51,6 +53,8 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
           </article>
         </div>
       </section>
+      <PaymentPanel bookingId={booking.id} bookingStatus={booking.status} />
+      <BookingChat bookingId={booking.id} />
       <section className="panel">
         <p className="eyebrow">Timeline</p>
         <h2>Booking events</h2>

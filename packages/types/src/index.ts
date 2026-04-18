@@ -12,7 +12,9 @@ export type BookingStatus =
   | "pending_payment"
   | "paid_pending_acceptance"
   | "accepted"
-  | "cancelled";
+  | "cancelled"
+  | "released"
+  | "refunded";
 
 export type VerificationStatus =
   | "not_started"
@@ -81,6 +83,93 @@ export type BookingEvent = {
   created_at: string;
 };
 
+export type PaymentStatus =
+  | "requires_action"
+  | "succeeded"
+  | "failed"
+  | "refunded";
+
+export type HeldFundsStatus = "held" | "released" | "refunded";
+
+export type LedgerEntryType =
+  | "payment_captured"
+  | "funds_held"
+  | "platform_fee"
+  | "creator_credit"
+  | "funds_released"
+  | "refund_issued";
+
+export type Payment = {
+  id: string;
+  booking_id: string;
+  provider: string;
+  provider_payment_id: string;
+  gross_amount: number;
+  platform_fee: number;
+  creator_amount: number;
+  currency: string;
+  status: PaymentStatus;
+  created_at: string;
+};
+
+export type PaymentIntent = {
+  payment: Payment;
+  checkout_reference: string;
+  message: string;
+};
+
+export type HeldFunds = {
+  id: string;
+  booking_id: string;
+  payment_id: string;
+  amount: number;
+  currency: string;
+  status: HeldFundsStatus;
+  created_at: string;
+};
+
+export type LedgerEntry = {
+  id: string;
+  account_type: string;
+  account_id: string;
+  booking_id: string;
+  entry_type: LedgerEntryType;
+  amount: number;
+  currency: string;
+  created_at: string;
+};
+
+export type BookingPaymentState = {
+  payments: Payment[];
+  held_funds: HeldFunds[];
+  ledger_entries: LedgerEntry[];
+};
+
+export type BookingMessage = {
+  id: string;
+  booking_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
+export type ReportTargetType = "user" | "creator" | "service" | "booking" | "message";
+
+export type ReportStatus = "open" | "reviewing" | "resolved" | "dismissed";
+
+export type Report = {
+  id: string;
+  reporter_id: string;
+  target_type: ReportTargetType;
+  target_id: string;
+  reason: string;
+  details: string | null;
+  status: ReportStatus;
+  risk_score: number;
+  created_at: string;
+  resolved_at: string | null;
+};
+
 export type AppUser = {
   id: string;
   email: string;
@@ -103,6 +192,7 @@ export type AdminOverview = {
   total_creators: number;
   total_services: number;
   total_bookings: number;
+  open_reports: number;
 };
 
 export type AdminDashboard = {
@@ -111,4 +201,5 @@ export type AdminDashboard = {
   creators: CreatorSummary[];
   services: Service[];
   bookings: Booking[];
+  reports: Report[];
 };

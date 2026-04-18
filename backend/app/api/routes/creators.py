@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.dependencies import require_creator_owner_or_admin, require_current_user
 from app.models.entities import User
 from app.repositories.sqlite import repository
+from app.schemas.bookings import BookingResponse
 from app.schemas.creators import (
     CreatorProfileResponse,
     CreatorSummaryResponse,
@@ -42,3 +43,16 @@ def upsert_creator(
     require_creator_owner_or_admin(actor, creator_id)
     profile = upsert_creator_profile(creator_id, payload)
     return CreatorProfileResponse.model_validate(profile.model_dump())
+
+
+@router.get("/{creator_id}/bookings", response_model=list[BookingResponse])
+def list_creator_bookings(
+    creator_id: str,
+    actor: User = Depends(require_current_user),
+) -> list[BookingResponse]:
+    require_creator_owner_or_admin(actor, creator_id)
+    return [
+        BookingResponse.model_validate(booking.model_dump())
+        for booking in repository.list_bookings()
+        if booking.creator_id == creator_id
+    ]

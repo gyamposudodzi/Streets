@@ -34,6 +34,8 @@ class BookingStatus(StrEnum):
     PAID_PENDING_ACCEPTANCE = "paid_pending_acceptance"
     ACCEPTED = "accepted"
     CANCELLED = "cancelled"
+    RELEASED = "released"
+    REFUNDED = "refunded"
 
 
 class PaymentStatus(StrEnum):
@@ -56,3 +58,18 @@ class LedgerEntryType(StrEnum):
     CREATOR_CREDIT = "creator_credit"
     FUNDS_RELEASED = "funds_released"
     REFUND_ISSUED = "refund_issued"
+
+
+class ReportTargetType(StrEnum):
+    USER = "user"
+    CREATOR = "creator"
+    SERVICE = "service"
+    BOOKING = "booking"
+    MESSAGE = "message"
+
+
+class ReportStatus(StrEnum):
+    OPEN = "open"
+    REVIEWING = "reviewing"
+    RESOLVED = "resolved"
+    DISMISSED = "dismissed"

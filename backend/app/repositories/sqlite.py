@@ -12,7 +12,9 @@ from app.models.entities import (
     CreatorProfile,
     HeldFunds,
     LedgerEntry,
+    Message,
     Payment,
+    Report,
     Service,
     Session,
     User,
@@ -172,6 +174,16 @@ class SQLiteRepository:
         if row is None:
             return None
         return LedgerEntry.model_validate(dict(row))
+
+    def _to_message(self, row: sqlite3.Row | None) -> Message | None:
+        if row is None:
+            return None
+        return Message.model_validate(dict(row))
+
+    def _to_report(self, row: sqlite3.Row | None) -> Report | None:
+        if row is None:
+            return None
+        return Report.model_validate(dict(row))
 
     def list_creators(self) -> list[CreatorProfile]:
         with self._connect() as connection:
@@ -555,6 +567,45 @@ class SQLiteRepository:
             )
         return self.get_booking(booking_id)
 
+    def update_booking_status(
+        self,
+        booking_id: str,
+        status: str,
+        actor_user_id: str,
+        event_type: str,
+        detail: str,
+    ) -> Booking | None:
+        booking = self.get_booking(booking_id)
+        if booking is None:
+            return None
+
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE bookings SET status = ? WHERE id = ?",
+                (status, booking_id),
+            )
+            event = BookingEvent(
+                booking_id=booking_id,
+                event_type=event_type,
+                actor_user_id=actor_user_id,
+                detail=detail,
+            )
+            connection.execute(
+                """
+                INSERT INTO booking_events (id, booking_id, event_type, actor_user_id, detail, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event.id,
+                    event.booking_id,
+                    event.event_type,
+                    event.actor_user_id,
+                    event.detail,
+                    event.created_at.isoformat(),
+                ),
+            )
+        return self.get_booking(booking_id)
+
     def create_payment(self, payment: Payment) -> Payment:
         with self._connect() as connection:
             connection.execute(
@@ -631,6 +682,18 @@ class SQLiteRepository:
             ).fetchall()
         return [self._to_held_funds(row) for row in rows]
 
+    def update_held_funds_status(self, held_funds_id: str, status: str) -> HeldFunds | None:
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE held_funds SET status = ? WHERE id = ?",
+                (status, held_funds_id),
+            )
+            row = connection.execute(
+                "SELECT * FROM held_funds WHERE id = ?",
+                (held_funds_id,),
+            ).fetchone()
+        return self._to_held_funds(row)
+
     def create_ledger_entry(self, entry: LedgerEntry) -> LedgerEntry:
         with self._connect() as connection:
             connection.execute(
@@ -659,6 +722,83 @@ class SQLiteRepository:
                 (booking_id,),
             ).fetchall()
         return [self._to_ledger_entry(row) for row in rows]
+
+    def create_message(self, message: Message) -> Message:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO messages (id, booking_id, sender_id, body, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    message.id,
+                    message.booking_id,
+                    message.sender_id,
+                    message.body,
+                    message.created_at.isoformat(),
+                ),
+            )
+        return message
+
+    def list_messages_for_booking(self, booking_id: str) -> list[Message]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM messages WHERE booking_id = ? ORDER BY created_at ASC",
+                (booking_id,),
+            ).fetchall()
+        return [self._to_message(row) for row in rows]
+
+    def create_report(self, report: Report) -> Report:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO reports (
+                    id, reporter_id, target_type, target_id, reason, details,
+                    status, risk_score, created_at, resolved_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    report.id,
+                    report.reporter_id,
+                    report.target_type,
+                    report.target_id,
+                    report.reason,
+                    report.details,
+                    report.status,
+                    report.risk_score,
+                    report.created_at.isoformat(),
+                    report.resolved_at.isoformat() if report.resolved_at else None,
+                ),
+            )
+        return report
+
+    def list_reports(self) -> list[Report]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM reports ORDER BY created_at DESC"
+            ).fetchall()
+        return [self._to_report(row) for row in rows]
+
+    def get_report(self, report_id: str) -> Report | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM reports WHERE id = ?",
+                (report_id,),
+            ).fetchone()
+        return self._to_report(row)
+
+    def update_report_status(
+        self,
+        report_id: str,
+        status: str,
+        resolved_at: str | None,
+    ) -> Report | None:
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE reports SET status = ?, resolved_at = ? WHERE id = ?",
+                (status, resolved_at, report_id),
+            )
+        return self.get_report(report_id)
 
 
 repository = SQLiteRepository(settings.sqlite_path)

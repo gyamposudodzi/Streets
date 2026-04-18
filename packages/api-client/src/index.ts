@@ -6,8 +6,16 @@ import type {
   AvailabilitySlot,
   Booking,
   BookingEvent,
+  BookingMessage,
+  BookingPaymentState,
   CreatorProfile,
   CreatorSummary,
+  Payment,
+  PaymentIntent,
+  HeldFunds,
+  Report,
+  ReportStatus,
+  ReportTargetType,
   Service
 } from "@streets/types";
 
@@ -86,6 +94,95 @@ export function getBooking(bookingId: string) {
 
 export function listBookingEvents(bookingId: string) {
   return fetchJson<BookingEvent[]>(`${apiRoutes.bookings}/${bookingId}/events`);
+}
+
+export function listCreatorBookings(creatorId: string, accessToken: string) {
+  return fetchJson<Booking[]>(`${apiRoutes.creators}/${creatorId}/bookings`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function acceptBooking(bookingId: string, accessToken: string) {
+  return fetchJson<Booking>(`${apiRoutes.bookings}/${bookingId}/accept`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function cancelBooking(bookingId: string, accessToken: string) {
+  return fetchJson<Booking>(`${apiRoutes.bookings}/${bookingId}/cancel`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function getBookingPaymentState(bookingId: string) {
+  return fetchJson<BookingPaymentState>(`/api/v1/payments/bookings/${bookingId}`);
+}
+
+export function listBookingMessages(bookingId: string, accessToken: string) {
+  return fetchJson<BookingMessage[]>(`/api/v1/messages/bookings/${bookingId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function createBookingMessage(
+  bookingId: string,
+  body: string,
+  accessToken: string
+) {
+  return fetchJson<BookingMessage>(`/api/v1/messages/bookings/${bookingId}`, {
+    method: "POST",
+    body: JSON.stringify({ body }),
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function createReport(
+  input: {
+    target_type: ReportTargetType;
+    target_id: string;
+    reason: string;
+    details?: string;
+  },
+  accessToken: string
+) {
+  return fetchJson<Report>("/api/v1/reports", {
+    method: "POST",
+    body: JSON.stringify(input),
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function createPaymentIntent(bookingId: string, accessToken: string) {
+  return fetchJson<PaymentIntent>("/api/v1/payments/create-intent", {
+    method: "POST",
+    body: JSON.stringify({ booking_id: bookingId }),
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function simulatePaymentSuccess(paymentId: string, accessToken: string) {
+  return fetchJson<Payment>(`/api/v1/payments/${paymentId}/simulate-success`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
 }
 
 export function createBooking(
@@ -216,6 +313,38 @@ export function getAdminOverview(accessToken: string) {
 
 export function getAdminDashboard(accessToken: string) {
   return fetchJson<AdminDashboard>("/api/v1/admin/dashboard", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function adminReleaseBooking(bookingId: string, accessToken: string) {
+  return fetchJson<HeldFunds[]>(`/api/v1/admin/bookings/${bookingId}/release`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function adminRefundBooking(bookingId: string, accessToken: string) {
+  return fetchJson<HeldFunds[]>(`/api/v1/admin/bookings/${bookingId}/refund`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function adminResolveReport(
+  reportId: string,
+  status: ReportStatus,
+  accessToken: string
+) {
+  return fetchJson<Report>(`/api/v1/admin/reports/${reportId}/resolve`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
     headers: {
       Authorization: `Bearer ${accessToken}`
     }

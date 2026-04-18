@@ -2,8 +2,22 @@
 
 import { useEffect, useState } from "react";
 
-import { getAdminDashboard, loginUser, registerUser } from "@streets/api-client";
-import type { AdminDashboard as AdminDashboardData, AuthSession } from "@streets/types";
+import {
+  acceptBooking,
+  adminRefundBooking,
+  adminReleaseBooking,
+  adminResolveReport,
+  cancelBooking,
+  getAdminDashboard,
+  getBookingPaymentState,
+  loginUser,
+  registerUser
+} from "@streets/api-client";
+import type {
+  AdminDashboard as AdminDashboardData,
+  AuthSession,
+  BookingPaymentState
+} from "@streets/types";
 
 const sessionStorageKey = "streets.admin.session";
 
@@ -20,6 +34,7 @@ export function AdminDashboard() {
   const [email, setEmail] = useState("");
   const [session, setSession] = useState<AuthSession | null>(null);
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
+  const [paymentStates, setPaymentStates] = useState<Record<string, BookingPaymentState>>({});
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isBusy, setIsBusy] = useState(false);
@@ -29,14 +44,16 @@ export function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    if (!session || session.user.role !== "admin") {
+    const currentSession = session;
+    if (!currentSession || currentSession.user.role !== "admin") {
       return;
     }
+    const accessToken = currentSession.access_token;
 
     async function loadDashboard() {
       setError("");
       try {
-        const data = await getAdminDashboard(session.access_token);
+        const data = await getAdminDashboard(accessToken);
         setDashboard(data);
       } catch {
         setError("Failed to load admin dashboard data.");
@@ -88,6 +105,87 @@ export function AdminDashboard() {
     setSession(null);
     setDashboard(null);
     setMessage("");
+  }
+
+  async function handleLoadPaymentState(bookingId: string) {
+    setError("");
+    try {
+      const state = await getBookingPaymentState(bookingId);
+      setPaymentStates((current) => ({ ...current, [bookingId]: state }));
+    } catch {
+      setError("Failed to load booking payment state.");
+    }
+  }
+
+  async function reloadDashboard(accessToken: string) {
+    const data = await getAdminDashboard(accessToken);
+    setDashboard(data);
+  }
+
+  async function handleReleaseBooking(bookingId: string) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      await adminReleaseBooking(bookingId, session.access_token);
+      await handleLoadPaymentState(bookingId);
+      await reloadDashboard(session.access_token);
+      setMessage("Held funds released.");
+    } catch {
+      setError("Release failed. Confirm this booking has held funds.");
+    }
+  }
+
+  async function handleRefundBooking(bookingId: string) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      await adminRefundBooking(bookingId, session.access_token);
+      await handleLoadPaymentState(bookingId);
+      await reloadDashboard(session.access_token);
+      setMessage("Held funds refunded.");
+    } catch {
+      setError("Refund failed. Confirm this booking has held funds.");
+    }
+  }
+
+  async function handleAcceptBooking(bookingId: string) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      await acceptBooking(bookingId, session.access_token);
+      await reloadDashboard(session.access_token);
+      setMessage("Booking accepted.");
+    } catch {
+      setError("Accept failed. Confirm the booking is paid and pending acceptance.");
+    }
+  }
+
+  async function handleCancelBooking(bookingId: string) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      await cancelBooking(bookingId, session.access_token);
+      await reloadDashboard(session.access_token);
+      setMessage("Booking cancelled.");
+    } catch {
+      setError("Cancel failed. Confirm the booking can still be cancelled.");
+    }
   }
 
   if (!session) {
@@ -169,6 +267,10 @@ export function AdminDashboard() {
               <h2>Bookings</h2>
               <p>{dashboard.overview.total_bookings}</p>
             </article>
+            <article className="card">
+              <h2>Open reports</h2>
+              <p>{dashboard.overview.open_reports}</p>
+            </article>
           </div>
 
           <section className="card stack">
@@ -205,13 +307,125 @@ export function AdminDashboard() {
           </section>
 
           <section className="card stack">
+            <h2>Reports</h2>
+            {dashboard.reports.length > 0 ? (
+              dashboard.reports.map((report) => (
+                <div key={report.id} className="stack bookingRow">
+                  <div className="row">
+                    <span>{report.target_type}</span>
+                    <span>{report.reason}</span>
+                    <span>{report.status}</span>
+                  </div>
+                  <p>Risk score: {report.risk_score}</p>
+                  {report.details ? <p>{report.details}</p> : null}
+                  <div className="actions">
+                    <button
+                      className="button"
+                      type="button"
+                      onClick={async () => {
+                        if (!session) return;
+                        await adminResolveReport(report.id, "reviewing", session.access_token);
+                        await reloadDashboard(session.access_token);
+                      }}
+                    >
+                      Mark reviewing
+                    </button>
+                    <button
+                      className="button"
+                      type="button"
+                      onClick={async () => {
+                        if (!session) return;
+                        await adminResolveReport(report.id, "resolved", session.access_token);
+                        await reloadDashboard(session.access_token);
+                      }}
+                    >
+                      Resolve
+                    </button>
+                    <button
+                      className="button secondaryButton"
+                      type="button"
+                      onClick={async () => {
+                        if (!session) return;
+                        await adminResolveReport(report.id, "dismissed", session.access_token);
+                        await reloadDashboard(session.access_token);
+                      }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No reports yet.</p>
+            )}
+          </section>
+
+          <section className="card stack">
             <h2>Bookings</h2>
             {dashboard.bookings.length > 0 ? (
               dashboard.bookings.map((booking) => (
-                <div key={booking.id} className="row">
-                  <span>{booking.id}</span>
-                  <span>{booking.fulfillment_type}</span>
-                  <span>{booking.status}</span>
+                <div key={booking.id} className="stack bookingRow">
+                  <div className="row">
+                    <span>{booking.id}</span>
+                    <span>{booking.fulfillment_type}</span>
+                    <span>{booking.status}</span>
+                  </div>
+                  <button
+                    className="button secondaryButton"
+                    type="button"
+                    onClick={() => handleLoadPaymentState(booking.id)}
+                  >
+                    Load payment state
+                  </button>
+                  {booking.status === "paid_pending_acceptance" ||
+                  booking.status === "accepted" ? (
+                    <div className="actions">
+                      {booking.status === "paid_pending_acceptance" ? (
+                        <button
+                          className="button"
+                          type="button"
+                          onClick={() => handleAcceptBooking(booking.id)}
+                        >
+                          Accept
+                        </button>
+                      ) : null}
+                      <button
+                        className="button"
+                        type="button"
+                        onClick={() => handleReleaseBooking(booking.id)}
+                      >
+                        Release funds
+                      </button>
+                      <button
+                        className="button secondaryButton"
+                        type="button"
+                        onClick={() => handleRefundBooking(booking.id)}
+                      >
+                        Refund buyer
+                      </button>
+                    </div>
+                  ) : null}
+                  {!["cancelled", "released", "refunded"].includes(booking.status) ? (
+                    <button
+                      className="button secondaryButton"
+                      type="button"
+                      onClick={() => handleCancelBooking(booking.id)}
+                    >
+                      Cancel booking
+                    </button>
+                  ) : null}
+                  {paymentStates[booking.id] ? (
+                    <div className="paymentState">
+                      <p>Payments: {paymentStates[booking.id].payments.length}</p>
+                      <p>Held funds: {paymentStates[booking.id].held_funds.length}</p>
+                      <p>Ledger entries: {paymentStates[booking.id].ledger_entries.length}</p>
+                      {paymentStates[booking.id].ledger_entries.map((entry) => (
+                        <p key={entry.id}>
+                          {entry.entry_type}: {entry.amount} {entry.currency}
+                        </p>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ))
             ) : (
