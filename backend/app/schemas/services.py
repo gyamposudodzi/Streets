@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.domain.enums import FulfillmentType
+from app.domain.enums import FulfillmentType, ServiceModerationStatus
 
 
 class ServiceResponse(BaseModel):
@@ -16,6 +16,7 @@ class ServiceResponse(BaseModel):
     currency: str
     fulfillment_type: FulfillmentType
     is_active: bool
+    moderation_status: ServiceModerationStatus
     created_at: datetime
 
 
@@ -45,3 +46,4 @@ class ServiceUpdateRequest(BaseModel):
     currency: str | None = None
     fulfillment_type: FulfillmentType | None = None
     is_active: bool | None = None
+    moderation_status: ServiceModerationStatus | None = None

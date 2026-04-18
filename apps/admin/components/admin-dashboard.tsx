@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 
 import {
   acceptBooking,
+  adminApproveService,
   adminRefundBooking,
+  adminRejectService,
   adminReleaseBooking,
   adminResolveReport,
   cancelBooking,
@@ -188,6 +190,36 @@ export function AdminDashboard() {
     }
   }
 
+  async function handleApproveService(serviceId: string) {
+    if (!session) {
+      return;
+    }
+    setError("");
+    setMessage("");
+    try {
+      await adminApproveService(serviceId, session.access_token);
+      await reloadDashboard(session.access_token);
+      setMessage("Service approved.");
+    } catch {
+      setError("Service approval failed.");
+    }
+  }
+
+  async function handleRejectService(serviceId: string) {
+    if (!session) {
+      return;
+    }
+    setError("");
+    setMessage("");
+    try {
+      await adminRejectService(serviceId, session.access_token);
+      await reloadDashboard(session.access_token);
+      setMessage("Service rejected.");
+    } catch {
+      setError("Service rejection failed.");
+    }
+  }
+
   if (!session) {
     return (
       <section className="hero">
@@ -298,10 +330,28 @@ export function AdminDashboard() {
           <section className="card stack">
             <h2>Services</h2>
             {dashboard.services.map((service) => (
-              <div key={service.id} className="row">
-                <span>{service.title}</span>
-                <span>{service.fulfillment_type}</span>
-                <span>{service.is_active ? "active" : "inactive"}</span>
+              <div key={service.id} className="stack bookingRow">
+                <div className="row">
+                  <span>{service.title}</span>
+                  <span>{service.fulfillment_type}</span>
+                  <span>{service.moderation_status}</span>
+                </div>
+                <div className="actions">
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={() => handleApproveService(service.id)}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className="button secondaryButton"
+                    type="button"
+                    onClick={() => handleRejectService(service.id)}
+                  >
+                    Reject
+                  </button>
+                </div>
               </div>
             ))}
           </section>

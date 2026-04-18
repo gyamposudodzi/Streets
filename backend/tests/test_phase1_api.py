@@ -25,7 +25,8 @@ def test_services_endpoint_returns_seeded_services() -> None:
 
     assert response.status_code == 200
     services = response.json()
-    assert len(services) >= 3
+    assert len(services) >= 2
+    assert all(service["moderation_status"] == "approved" for service in services)
 
 
 def test_register_login_and_create_booking_flow() -> None:
@@ -617,3 +618,69 @@ def test_reports_can_be_created_and_resolved_by_admin() -> None:
     )
     assert resolve_response.status_code == 200
     assert resolve_response.json()["status"] == "resolved"
+
+
+def test_services_require_admin_approval_before_public_discovery() -> None:
+    creator_register = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "approval-creator@streets.local",
+            "role": "creator",
+            "is_age_verified": True,
+        },
+    )
+    assert creator_register.status_code == 200
+    creator_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "approval-creator@streets.local"},
+    )
+    creator_id = creator_login.json()["user"]["id"]
+    creator_headers = {
+        "Authorization": f"Bearer {creator_login.json()['access_token']}"
+    }
+    profile_response = client.put(
+        f"/api/v1/creators/{creator_id}",
+        json={
+            "display_name": "Approval Creator",
+            "bio": "Approval flow test.",
+            "country": "US",
+            "service_region": "Austin",
+        },
+        headers=creator_headers,
+    )
+    assert profile_response.status_code == 200
+    service_response = client.post(
+        f"/api/v1/services/creator/{creator_id}",
+        json={
+            "title": "Pending review service",
+            "description": "Should not be public until approved.",
+            "category": "consulting",
+            "duration_minutes": 30,
+            "price": 10000,
+            "currency": "USD",
+            "fulfillment_type": "in_person",
+        },
+        headers=creator_headers,
+    )
+    assert service_response.status_code == 201
+    service = service_response.json()
+    assert service["moderation_status"] == "pending_review"
+
+    public_detail = client.get(f"/api/v1/services/{service['id']}")
+    assert public_detail.status_code == 404
+
+    creator_services = client.get(f"/api/v1/services?creator_id={creator_id}")
+    assert creator_services.status_code == 200
+    assert creator_services.json()[0]["id"] == service["id"]
+
+    admin_login = client.post("/api/v1/auth/login", json={"email": "admin@streets.local"})
+    admin_headers = {"Authorization": f"Bearer {admin_login.json()['access_token']}"}
+    approve_response = client.post(
+        f"/api/v1/admin/services/{service['id']}/approve",
+        headers=admin_headers,
+    )
+    assert approve_response.status_code == 200
+    assert approve_response.json()["moderation_status"] == "approved"
+
+    public_detail_after_approval = client.get(f"/api/v1/services/{service['id']}")
+    assert public_detail_after_approval.status_code == 200

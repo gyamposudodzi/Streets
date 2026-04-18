@@ -24,6 +24,7 @@ def list_services(
         category=category,
         fulfillment_type=fulfillment_type,
         query=q,
+        moderation_status=None if creator_id else "approved",
     )
     return [ServiceResponse.model_validate(service.model_dump()) for service in services]
 
@@ -31,7 +32,7 @@ def list_services(
 @router.get("/{service_id}", response_model=ServiceResponse)
 def get_service(service_id: str) -> ServiceResponse:
     service = repository.get_service(service_id)
-    if service is None:
+    if service is None or service.moderation_status != "approved":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Service not found.",

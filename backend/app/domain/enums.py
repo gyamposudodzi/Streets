@@ -73,3 +73,9 @@ class ReportStatus(StrEnum):
     REVIEWING = "reviewing"
     RESOLVED = "resolved"
     DISMISSED = "dismissed"
+
+
+class ServiceModerationStatus(StrEnum):
+    PENDING_REVIEW = "pending_review"
+    APPROVED = "approved"
+    REJECTED = "rejected"

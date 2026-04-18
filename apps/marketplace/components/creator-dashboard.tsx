@@ -415,6 +415,7 @@ export function CreatorDashboard() {
             </p>
             <p>{service.price} cents</p>
             <p>{service.is_active ? "Active" : "Inactive"}</p>
+            <p>Review: {service.moderation_status}</p>
             <button className="button secondaryButton" type="button" onClick={() => handleToggleService(service)}>
               {service.is_active ? "Deactivate" : "Activate"}
             </button>

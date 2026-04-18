@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies import require_admin_user
 from app.models.entities import User
@@ -52,6 +52,34 @@ def admin_services(_: User = Depends(require_admin_user)) -> list[ServiceRespons
         ServiceResponse.model_validate(service.model_dump())
         for service in repository.list_services()
     ]
+
+
+@router.post("/services/{service_id}/approve", response_model=ServiceResponse)
+def admin_approve_service(
+    service_id: str,
+    _: User = Depends(require_admin_user),
+) -> ServiceResponse:
+    service = repository.update_service(service_id, moderation_status="approved", is_active=True)
+    if service is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service not found.",
+        )
+    return ServiceResponse.model_validate(service.model_dump())
+
+
+@router.post("/services/{service_id}/reject", response_model=ServiceResponse)
+def admin_reject_service(
+    service_id: str,
+    _: User = Depends(require_admin_user),
+) -> ServiceResponse:
+    service = repository.update_service(service_id, moderation_status="rejected", is_active=False)
+    if service is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service not found.",
+        )
+    return ServiceResponse.model_validate(service.model_dump())
 
 
 @router.get("/bookings", response_model=list[BookingResponse])

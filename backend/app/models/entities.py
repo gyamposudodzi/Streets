@@ -11,6 +11,7 @@ from app.domain.enums import (
     PaymentStatus,
     ReportStatus,
     ReportTargetType,
+    ServiceModerationStatus,
     UserRole,
     UserStatus,
     VerificationStatus,
@@ -63,6 +64,7 @@ class Service(BaseModel):
     currency: str = "USD"
     fulfillment_type: FulfillmentType
     is_active: bool = True
+    moderation_status: ServiceModerationStatus = ServiceModerationStatus.PENDING_REVIEW
     created_at: datetime = Field(default_factory=utc_now)
 
 

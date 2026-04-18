@@ -4,7 +4,7 @@ from pathlib import Path
 import sqlite3
 
 from app.core.config import settings
-from app.domain.enums import FulfillmentType, UserRole, VerificationStatus
+from app.domain.enums import FulfillmentType, ServiceModerationStatus, UserRole, VerificationStatus
 from app.models.entities import (
     AvailabilitySlot,
     Booking,
@@ -38,7 +38,33 @@ class SQLiteRepository:
         db_path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as connection:
             connection.executescript(self.schema_path.read_text(encoding="utf-8"))
+            self._migrate(connection)
         self._seed_if_needed()
+
+    def _migrate(self, connection: sqlite3.Connection) -> None:
+        service_columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(services)").fetchall()
+        }
+        if "moderation_status" not in service_columns:
+            connection.execute(
+                "ALTER TABLE services ADD COLUMN moderation_status TEXT NOT NULL DEFAULT 'pending_review'"
+            )
+            connection.execute(
+                """
+                UPDATE services
+                SET moderation_status = 'approved'
+                WHERE fulfillment_type != 'in_person'
+                """
+            )
+        connection.execute(
+            """
+            UPDATE services
+            SET moderation_status = 'approved'
+            WHERE title IN ('Private video consulting session', 'Custom creator request')
+                AND moderation_status = 'pending_review'
+            """
+        )
 
     def reset(self) -> None:
         db_path = Path(self.database_path)
@@ -94,6 +120,7 @@ class SQLiteRepository:
             duration_minutes=45,
             price=15000,
             fulfillment_type=FulfillmentType.VIDEO,
+            moderation_status=ServiceModerationStatus.APPROVED,
         )
         service_two = Service(
             creator_id=creator_user.id,
@@ -103,6 +130,7 @@ class SQLiteRepository:
             duration_minutes=72 * 60,
             price=9500,
             fulfillment_type=FulfillmentType.CUSTOM_REQUEST,
+            moderation_status=ServiceModerationStatus.APPROVED,
         )
         service_three = Service(
             creator_id=creator_user.id,
@@ -112,6 +140,7 @@ class SQLiteRepository:
             duration_minutes=90,
             price=30000,
             fulfillment_type=FulfillmentType.IN_PERSON,
+            moderation_status=ServiceModerationStatus.PENDING_REVIEW,
         )
 
         for service in (service_one, service_two, service_three):
@@ -238,6 +267,7 @@ class SQLiteRepository:
         category: str | None = None,
         fulfillment_type: FulfillmentType | None = None,
         query: str | None = None,
+        moderation_status: str | None = None,
     ) -> list[Service]:
         clauses: list[str] = []
         values: list[str] = []
@@ -254,6 +284,9 @@ class SQLiteRepository:
             clauses.append("(LOWER(title) LIKE ? OR LOWER(description) LIKE ?)")
             search = f"%{query.lower()}%"
             values.extend([search, search])
+        if moderation_status:
+            clauses.append("moderation_status = ?")
+            values.append(moderation_status)
 
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         with self._connect() as connection:
@@ -277,8 +310,8 @@ class SQLiteRepository:
                 """
                 INSERT INTO services (
                     id, creator_id, title, description, category, duration_minutes,
-                    price, currency, fulfillment_type, is_active, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    price, currency, fulfillment_type, is_active, moderation_status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     service.id,
@@ -291,6 +324,7 @@ class SQLiteRepository:
                     service.currency,
                     service.fulfillment_type,
                     int(service.is_active),
+                    service.moderation_status,
                     service.created_at.isoformat(),
                 ),
             )

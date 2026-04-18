@@ -337,6 +337,24 @@ export function adminRefundBooking(bookingId: string, accessToken: string) {
   });
 }
 
+export function adminApproveService(serviceId: string, accessToken: string) {
+  return fetchJson<Service>(`/api/v1/admin/services/${serviceId}/approve`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function adminRejectService(serviceId: string, accessToken: string) {
+  return fetchJson<Service>(`/api/v1/admin/services/${serviceId}/reject`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
 export function adminResolveReport(
   reportId: string,
   status: ReportStatus,

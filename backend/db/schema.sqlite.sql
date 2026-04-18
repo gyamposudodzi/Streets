@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS services (
     currency TEXT NOT NULL,
     fulfillment_type TEXT NOT NULL,
     is_active INTEGER NOT NULL DEFAULT 1,
+    moderation_status TEXT NOT NULL DEFAULT 'pending_review',
     created_at TEXT NOT NULL
 );
 

@@ -40,6 +40,7 @@ CREATE TABLE services (
     currency TEXT NOT NULL,
     fulfillment_type TEXT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    moderation_status TEXT NOT NULL DEFAULT 'pending_review',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

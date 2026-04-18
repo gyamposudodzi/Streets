@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 
+from app.domain.enums import ServiceModerationStatus
 from app.models.entities import AvailabilitySlot, Service
 from app.repositories.sqlite import repository
 from app.schemas.availability import AvailabilitySlotCreateRequest
@@ -23,6 +24,7 @@ def create_service(creator_id: str, payload: ServiceCreateRequest) -> Service:
         price=payload.price,
         currency=payload.currency,
         fulfillment_type=payload.fulfillment_type,
+        moderation_status=ServiceModerationStatus.PENDING_REVIEW,
     )
     return repository.create_service(service)
 

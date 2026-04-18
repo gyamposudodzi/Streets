@@ -22,6 +22,11 @@ export type VerificationStatus =
   | "approved"
   | "rejected";
 
+export type ServiceModerationStatus =
+  | "pending_review"
+  | "approved"
+  | "rejected";
+
 export type CreatorSummary = {
   user_id: string;
   display_name: string;
@@ -48,6 +53,7 @@ export type Service = {
   currency: string;
   fulfillment_type: FulfillmentType;
   is_active: boolean;
+  moderation_status: ServiceModerationStatus;
   created_at: string;
 };
 
