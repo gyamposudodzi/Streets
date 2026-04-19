@@ -50,12 +50,13 @@ Buyer flow:
 6. Buyer creates a simulated payment intent.
 7. Buyer simulates payment success.
 8. Backend creates held funds and ledger entries.
-9. Creator accepts the booking.
-10. Creator marks the booking in progress.
-11. Creator marks the booking delivered.
-12. Booking enters awaiting release with a release target timestamp.
-13. Buyer confirms completion or opens a dispute.
-14. Admin releases funds or refunds the buyer.
+9. Creator accepts or declines the booking.
+10. If declined, held funds are refunded to the buyer.
+11. If accepted, creator marks the booking in progress.
+12. Creator marks the booking delivered.
+13. Booking enters awaiting release with a release target timestamp.
+14. Buyer confirms completion or opens a dispute.
+15. Admin releases funds or refunds the buyer.
 
 Creator flow:
 
@@ -65,7 +66,8 @@ Creator flow:
 4. Clean services auto-approve for public discovery.
 5. Services matching admin-managed hold rules stay pending until reviewed.
 6. Creator views bookings.
-7. Creator accepts, starts, and delivers paid bookings.
+7. Creator accepts or declines paid bookings.
+8. Accepted bookings can be started and delivered by the creator.
 
 Admin flow:
 
@@ -110,6 +112,7 @@ Bookings:
 - `GET /bookings/{booking_id}`
 - `GET /bookings/{booking_id}/events`
 - `POST /bookings/{booking_id}/accept`
+- `POST /bookings/{booking_id}/decline`
 - `POST /bookings/{booking_id}/cancel`
 - `POST /bookings/{booking_id}/start`
 - `POST /bookings/{booking_id}/deliver`

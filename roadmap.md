@@ -172,6 +172,8 @@ Completed:
 - Booking creation with draft to pending payment event flow.
 - Booking events timeline.
 - Creator booking lookup.
+- Creator accept/decline decision for paid bookings pending creator acceptance.
+- Declined creator bookings automatically refund held funds to the buyer.
 - Marketplace home, search, auth, creator dashboard, checkout, and booking detail pages.
 
 Partially complete:
@@ -357,10 +359,11 @@ Buyer workflow:
 6. Buyer creates a simulated payment intent.
 7. Buyer simulates payment success.
 8. Funds move into held state with ledger entries.
-9. Creator accepts the paid booking.
-10. Creator starts and delivers the booking.
-11. Buyer confirms completion or opens a dispute.
-12. Admin releases or refunds held funds.
+9. Creator accepts or declines the paid booking.
+10. If the creator declines, held funds are refunded to the buyer.
+11. If the creator accepts, creator starts and delivers the booking.
+12. Buyer confirms completion or opens a dispute.
+13. Admin releases or refunds held funds.
 
 Creator workflow:
 
@@ -370,7 +373,7 @@ Creator workflow:
 4. New services default to pending review.
 5. Clean services auto-approve; admin reviews only held public-wording matches.
 6. Creator sees bookings.
-7. Creator accepts paid bookings.
+7. Creator accepts or declines paid bookings.
 8. Creator marks work in progress and delivered.
 
 Admin workflow:

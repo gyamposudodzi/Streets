@@ -2,8 +2,14 @@ from datetime import timedelta
 
 from fastapi import HTTPException, status
 
-from app.domain.enums import AuditAction, BookingStatus, DisputeStatus
-from app.models.entities import Booking, Dispute, User, utc_now
+from app.domain.enums import (
+    AuditAction,
+    BookingStatus,
+    DisputeStatus,
+    HeldFundsStatus,
+    LedgerEntryType,
+)
+from app.models.entities import Booking, Dispute, LedgerEntry, User, utc_now
 from app.repositories.sqlite import repository
 from app.schemas.bookings import BookingCreateRequest
 from app.schemas.disputes import DisputeCreateRequest
@@ -87,6 +93,56 @@ def accept_booking(booking_id: str, actor: User) -> Booking:
     return updated
 
 
+def decline_booking(booking_id: str, actor: User) -> Booking:
+    booking = _get_booking_or_404(booking_id)
+    _require_creator_or_admin(booking, actor, "decline this booking")
+    if booking.status != BookingStatus.PAID_PENDING_ACCEPTANCE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only paid bookings pending creator acceptance can be declined.",
+        )
+
+    held_funds = [
+        held
+        for held in repository.list_held_funds_for_booking(booking.id)
+        if held.status == HeldFundsStatus.HELD
+    ]
+    if not held_funds:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No held funds are available to refund for this declined booking.",
+        )
+
+    for held in held_funds:
+        repository.update_held_funds_status(held.id, HeldFundsStatus.REFUNDED)
+        repository.create_ledger_entry(
+            LedgerEntry(
+                account_type="buyer",
+                account_id=booking.buyer_id,
+                booking_id=booking.id,
+                entry_type=LedgerEntryType.REFUND_ISSUED,
+                amount=held.amount,
+                currency=held.currency,
+            )
+        )
+
+    updated = repository.update_booking_status(
+        booking.id,
+        BookingStatus.DECLINED,
+        actor_user_id=actor.id,
+        event_type="booking.declined",
+        detail="Creator declined the booking and held funds were refunded to the buyer.",
+    )
+    record_admin_action(
+        actor,
+        AuditAction.BOOKING_DECLINED,
+        target_type="booking",
+        target_id=booking.id,
+        detail="Admin declined a paid booking and refunded held funds.",
+    )
+    return updated
+
+
 def cancel_booking(booking_id: str, actor: User) -> Booking:
     booking = repository.get_booking(booking_id)
     if booking is None:
@@ -104,6 +160,7 @@ def cancel_booking(booking_id: str, actor: User) -> Booking:
         BookingStatus.REFUNDED,
         BookingStatus.CANCELLED,
         BookingStatus.DISPUTED,
+        BookingStatus.DECLINED,
     }:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

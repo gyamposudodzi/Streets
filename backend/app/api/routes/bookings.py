@@ -10,6 +10,7 @@ from app.services.bookings import (
     cancel_booking,
     confirm_booking_completion,
     create_booking,
+    decline_booking,
     deliver_booking,
     open_booking_dispute,
     start_booking,
@@ -68,6 +69,15 @@ def cancel_booking_route(
     actor: User = Depends(require_current_user),
 ) -> BookingResponse:
     booking = cancel_booking(booking_id, actor)
+    return BookingResponse.model_validate(booking.model_dump())
+
+
+@router.post("/{booking_id}/decline", response_model=BookingResponse)
+def decline_booking_route(
+    booking_id: str,
+    actor: User = Depends(require_current_user),
+) -> BookingResponse:
+    booking = decline_booking(booking_id, actor)
     return BookingResponse.model_validate(booking.model_dump())
 
 

@@ -12,6 +12,7 @@ import {
   adminResolveReport,
   cancelBooking,
   createModerationRule,
+  declineBooking,
   getAdminDashboard,
   getBookingPaymentState,
   loginUser,
@@ -184,6 +185,22 @@ export function AdminDashboard() {
       setMessage("Booking accepted.");
     } catch {
       setError("Accept failed. Confirm the booking is paid and pending acceptance.");
+    }
+  }
+
+  async function handleDeclineBooking(bookingId: string) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      await declineBooking(bookingId, session.access_token);
+      await reloadDashboard(session.access_token);
+      setMessage("Booking declined and buyer funds refunded.");
+    } catch {
+      setError("Decline failed. Confirm the booking is paid and pending creator acceptance.");
     }
   }
 
@@ -623,13 +640,22 @@ export function AdminDashboard() {
                   booking.status === "accepted" ? (
                     <div className="actions">
                       {booking.status === "paid_pending_acceptance" ? (
-                        <button
-                          className="button"
-                          type="button"
-                          onClick={() => handleAcceptBooking(booking.id)}
-                        >
-                          Accept
-                        </button>
+                        <>
+                          <button
+                            className="button"
+                            type="button"
+                            onClick={() => handleAcceptBooking(booking.id)}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            className="button secondaryButton"
+                            type="button"
+                            onClick={() => handleDeclineBooking(booking.id)}
+                          >
+                            Decline
+                          </button>
+                        </>
                       ) : null}
                       <button
                         className="button"
@@ -647,7 +673,7 @@ export function AdminDashboard() {
                       </button>
                     </div>
                   ) : null}
-                  {!["cancelled", "released", "refunded"].includes(booking.status) ? (
+                  {!["cancelled", "declined", "released", "refunded"].includes(booking.status) ? (
                     <button
                       className="button secondaryButton"
                       type="button"

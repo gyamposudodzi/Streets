@@ -8,6 +8,7 @@ import {
   cancelBooking,
   createCreatorService,
   createServiceSlot,
+  declineBooking,
   getCreator,
   listCreatorBookings,
   listServices,
@@ -211,6 +212,24 @@ export function CreatorDashboard() {
       setMessage("Booking accepted.");
     } catch {
       setError("Booking acceptance failed.");
+    }
+  }
+
+  async function handleDeclineBooking(bookingId: string) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      const updated = await declineBooking(bookingId, session.access_token);
+      setBookings((current) =>
+        current.map((booking) => (booking.id === updated.id ? updated : booking))
+      );
+      setMessage("Booking declined and buyer funds refunded.");
+    } catch {
+      setError("Booking decline failed.");
     }
   }
 
@@ -435,15 +454,24 @@ export function CreatorDashboard() {
               <p>{booking.scheduled_start ?? "Flexible schedule"}</p>
               <div className="actions">
                 {booking.status === "paid_pending_acceptance" ? (
-                  <button
-                    className="button"
-                    type="button"
-                    onClick={() => handleAcceptBooking(booking.id)}
-                  >
-                    Accept
-                  </button>
+                  <>
+                    <button
+                      className="button"
+                      type="button"
+                      onClick={() => handleAcceptBooking(booking.id)}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className="button secondaryButton"
+                      type="button"
+                      onClick={() => handleDeclineBooking(booking.id)}
+                    >
+                      Decline
+                    </button>
+                  </>
                 ) : null}
-                {!["cancelled", "released", "refunded"].includes(booking.status) ? (
+                {!["cancelled", "declined", "released", "refunded"].includes(booking.status) ? (
                   <button
                     className="button secondaryButton"
                     type="button"

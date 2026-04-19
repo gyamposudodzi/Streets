@@ -473,6 +473,36 @@ def test_creator_can_accept_paid_booking() -> None:
     assert accept_response.json()["status"] == "accepted"
 
 
+def test_creator_can_decline_paid_booking_and_refund_held_funds() -> None:
+    booking_id, _ = create_paid_booking_for_admin_action(
+        "decline-buyer@streets.local"
+    )
+    creator_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "creator@streets.local"},
+    )
+    creator_headers = {
+        "Authorization": f"Bearer {creator_login.json()['access_token']}"
+    }
+
+    decline_response = client.post(
+        f"/api/v1/bookings/{booking_id}/decline",
+        headers=creator_headers,
+    )
+    assert decline_response.status_code == 200
+    assert decline_response.json()["status"] == "declined"
+
+    payment_state_response = client.get(f"/api/v1/payments/bookings/{booking_id}")
+    payment_state = payment_state_response.json()
+    assert payment_state["held_funds"][0]["status"] == "refunded"
+    ledger_types = [entry["entry_type"] for entry in payment_state["ledger_entries"]]
+    assert "refund_issued" in ledger_types
+
+    events_response = client.get(f"/api/v1/bookings/{booking_id}/events")
+    event_types = [event["event_type"] for event in events_response.json()]
+    assert "booking.declined" in event_types
+
+
 def test_booking_delivery_completion_and_dispute_resolution_flow() -> None:
     booking_id, admin_headers = create_paid_booking_for_admin_action(
         "lifecycle-buyer@streets.local"

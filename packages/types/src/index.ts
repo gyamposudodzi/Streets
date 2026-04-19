@@ -16,6 +16,7 @@ export type BookingStatus =
   | "delivered"
   | "awaiting_release"
   | "disputed"
+  | "declined"
   | "cancelled"
   | "released"
   | "refunded";
@@ -202,6 +203,7 @@ export type AuditAction =
   | "service.approved"
   | "service.rejected"
   | "booking.accepted"
+  | "booking.declined"
   | "booking.cancelled"
   | "funds.released"
   | "funds.refunded"

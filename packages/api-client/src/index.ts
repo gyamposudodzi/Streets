@@ -117,6 +117,15 @@ export function acceptBooking(bookingId: string, accessToken: string) {
   });
 }
 
+export function declineBooking(bookingId: string, accessToken: string) {
+  return fetchJson<Booking>(`${apiRoutes.bookings}/${bookingId}/decline`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
 export function cancelBooking(bookingId: string, accessToken: string) {
   return fetchJson<Booking>(`${apiRoutes.bookings}/${bookingId}/cancel`, {
     method: "POST",
