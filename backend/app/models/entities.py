@@ -4,6 +4,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from app.domain.enums import (
+    AuditAction,
     BookingStatus,
     DisputeResolution,
     DisputeStatus,
@@ -167,3 +168,13 @@ class Dispute(BaseModel):
     resolution: DisputeResolution | None = None
     created_at: datetime = Field(default_factory=utc_now)
     resolved_at: datetime | None = None
+
+
+class AuditLog(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    actor_user_id: str
+    action: AuditAction
+    target_type: str
+    target_id: str
+    detail: str
+    created_at: datetime = Field(default_factory=utc_now)

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from app.schemas.audit import AuditLogResponse
 from app.schemas.auth import UserResponse
 from app.schemas.bookings import BookingResponse
 from app.schemas.creators import CreatorSummaryResponse
@@ -25,3 +26,4 @@ class AdminDashboardResponse(BaseModel):
     bookings: list[BookingResponse]
     reports: list[ReportResponse]
     disputes: list[DisputeResponse]
+    audit_logs: list[AuditLogResponse]

@@ -196,6 +196,26 @@ export type Dispute = {
   resolved_at: string | null;
 };
 
+export type AuditAction =
+  | "service.approved"
+  | "service.rejected"
+  | "booking.accepted"
+  | "booking.cancelled"
+  | "funds.released"
+  | "funds.refunded"
+  | "report.resolved"
+  | "dispute.resolved";
+
+export type AuditLog = {
+  id: string;
+  actor_user_id: string;
+  action: AuditAction;
+  target_type: string;
+  target_id: string;
+  detail: string;
+  created_at: string;
+};
+
 export type AppUser = {
   id: string;
   email: string;
@@ -230,4 +250,5 @@ export type AdminDashboard = {
   bookings: Booking[];
   reports: Report[];
   disputes: Dispute[];
+  audit_logs: AuditLog[];
 };

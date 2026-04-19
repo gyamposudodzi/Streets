@@ -2,11 +2,12 @@ from datetime import timedelta
 
 from fastapi import HTTPException, status
 
-from app.domain.enums import BookingStatus, DisputeStatus
+from app.domain.enums import AuditAction, BookingStatus, DisputeStatus
 from app.models.entities import Booking, Dispute, User, utc_now
 from app.repositories.sqlite import repository
 from app.schemas.bookings import BookingCreateRequest
 from app.schemas.disputes import DisputeCreateRequest
+from app.services.audit import record_admin_action
 
 
 RELEASE_WINDOW = timedelta(hours=24)
@@ -76,6 +77,13 @@ def accept_booking(booking_id: str, actor: User) -> Booking:
         event_type="booking.accepted",
         detail="Creator accepted the booking.",
     )
+    record_admin_action(
+        actor,
+        AuditAction.BOOKING_ACCEPTED,
+        target_type="booking",
+        target_id=booking.id,
+        detail="Admin accepted a paid booking.",
+    )
     return updated
 
 
@@ -108,6 +116,13 @@ def cancel_booking(booking_id: str, actor: User) -> Booking:
         actor_user_id=actor.id,
         event_type="booking.cancelled",
         detail="Booking was cancelled.",
+    )
+    record_admin_action(
+        actor,
+        AuditAction.BOOKING_CANCELLED,
+        target_type="booking",
+        target_id=booking.id,
+        detail="Admin cancelled a booking.",
     )
     return updated
 

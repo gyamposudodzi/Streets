@@ -6,6 +6,7 @@ import sqlite3
 from app.core.config import settings
 from app.domain.enums import FulfillmentType, ServiceModerationStatus, UserRole, VerificationStatus
 from app.models.entities import (
+    AuditLog,
     AvailabilitySlot,
     Booking,
     BookingEvent,
@@ -68,10 +69,27 @@ class SQLiteRepository:
         )
 
     def reset(self) -> None:
-        db_path = Path(self.database_path)
-        if db_path.exists():
-            db_path.unlink()
-        self._initialize()
+        with self._connect() as connection:
+            connection.execute("PRAGMA foreign_keys = OFF")
+            for table in (
+                "audit_logs",
+                "disputes",
+                "reports",
+                "messages",
+                "ledger_entries",
+                "held_funds",
+                "payments",
+                "booking_events",
+                "bookings",
+                "availability_slots",
+                "services",
+                "creator_profiles",
+                "sessions",
+                "users",
+            ):
+                connection.execute(f"DELETE FROM {table}")
+            connection.execute("PRAGMA foreign_keys = ON")
+        self._seed_if_needed()
 
     def _seed_if_needed(self) -> None:
         with self._connect() as connection:
@@ -219,6 +237,11 @@ class SQLiteRepository:
         if row is None:
             return None
         return Dispute.model_validate(dict(row))
+
+    def _to_audit_log(self, row: sqlite3.Row | None) -> AuditLog | None:
+        if row is None:
+            return None
+        return AuditLog.model_validate(dict(row))
 
     def list_creators(self) -> list[CreatorProfile]:
         with self._connect() as connection:
@@ -914,6 +937,34 @@ class SQLiteRepository:
                 (status, resolution, resolved_at, dispute_id),
             )
         return self.get_dispute(dispute_id)
+
+    def create_audit_log(self, audit_log: AuditLog) -> AuditLog:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO audit_logs (
+                    id, actor_user_id, action, target_type, target_id, detail, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    audit_log.id,
+                    audit_log.actor_user_id,
+                    audit_log.action,
+                    audit_log.target_type,
+                    audit_log.target_id,
+                    audit_log.detail,
+                    audit_log.created_at.isoformat(),
+                ),
+            )
+        return audit_log
+
+    def list_audit_logs(self, limit: int = 50) -> list[AuditLog]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [self._to_audit_log(row) for row in rows]
 
 
 repository = SQLiteRepository(settings.sqlite_path)

@@ -2,10 +2,11 @@ from uuid import uuid4
 
 from fastapi import HTTPException, status
 
-from app.domain.enums import BookingStatus, HeldFundsStatus, LedgerEntryType, PaymentStatus
+from app.domain.enums import AuditAction, BookingStatus, HeldFundsStatus, LedgerEntryType, PaymentStatus
 from app.models.entities import HeldFunds, LedgerEntry, Payment, User
 from app.repositories.sqlite import repository
 from app.schemas.payments import PaymentIntentCreateRequest
+from app.services.audit import record_admin_action
 
 
 PLATFORM_FEE_RATE = 0.2
@@ -164,6 +165,13 @@ def release_held_funds_for_booking(booking_id: str, actor: User) -> list[HeldFun
         event_type="release.executed",
         detail="Admin released held funds to creator balance.",
     )
+    record_admin_action(
+        actor,
+        AuditAction.FUNDS_RELEASED,
+        target_type="booking",
+        target_id=booking.id,
+        detail="Admin released held funds to creator balance.",
+    )
     return released
 
 
@@ -208,6 +216,13 @@ def refund_held_funds_for_booking(booking_id: str, actor: User) -> list[HeldFund
         BookingStatus.REFUNDED,
         actor_user_id=actor.id,
         event_type="refund.issued",
+        detail="Admin refunded held funds to buyer.",
+    )
+    record_admin_action(
+        actor,
+        AuditAction.FUNDS_REFUNDED,
+        target_type="booking",
+        target_id=booking.id,
         detail="Admin refunded held funds to buyer.",
     )
     return refunded

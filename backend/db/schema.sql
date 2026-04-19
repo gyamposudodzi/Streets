@@ -143,6 +143,16 @@ CREATE TABLE disputes (
     resolved_at TIMESTAMPTZ
 );
 
+CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY,
+    actor_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    detail TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX idx_services_creator_id ON services (creator_id);
 CREATE INDEX idx_services_category ON services (category);
 CREATE INDEX idx_services_fulfillment_type ON services (fulfillment_type);
@@ -158,3 +168,5 @@ CREATE INDEX idx_reports_status ON reports (status);
 CREATE INDEX idx_reports_target ON reports (target_type, target_id);
 CREATE INDEX idx_disputes_booking_id ON disputes (booking_id);
 CREATE INDEX idx_disputes_status ON disputes (status);
+CREATE INDEX idx_audit_logs_actor ON audit_logs (actor_user_id);
+CREATE INDEX idx_audit_logs_target ON audit_logs (target_type, target_id);

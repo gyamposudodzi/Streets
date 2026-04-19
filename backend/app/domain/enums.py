@@ -90,6 +90,17 @@ class DisputeResolution(StrEnum):
     REFUND = "refund"
 
 
+class AuditAction(StrEnum):
+    SERVICE_APPROVED = "service.approved"
+    SERVICE_REJECTED = "service.rejected"
+    BOOKING_ACCEPTED = "booking.accepted"
+    BOOKING_CANCELLED = "booking.cancelled"
+    FUNDS_RELEASED = "funds.released"
+    FUNDS_REFUNDED = "funds.refunded"
+    REPORT_RESOLVED = "report.resolved"
+    DISPUTE_RESOLVED = "dispute.resolved"
+
+
 class ServiceModerationStatus(StrEnum):
     PENDING_REVIEW = "pending_review"
     APPROVED = "approved"

@@ -24,6 +24,13 @@ import type {
 
 const sessionStorageKey = "streets.admin.session";
 
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(value));
+}
+
 function readSession(): AuthSession | null {
   const raw = window.localStorage.getItem(sessionStorageKey);
   return raw ? (JSON.parse(raw) as AuthSession) : null;
@@ -464,6 +471,26 @@ export function AdminDashboard() {
               ))
             ) : (
               <p>No disputes yet.</p>
+            )}
+          </section>
+
+          <section className="card stack">
+            <h2>Recent audit logs</h2>
+            {dashboard.audit_logs.length > 0 ? (
+              dashboard.audit_logs.map((auditLog) => (
+                <div key={auditLog.id} className="stack bookingRow">
+                  <div className="row">
+                    <span>{auditLog.action}</span>
+                    <span>{auditLog.target_type}</span>
+                    <span>{formatDate(auditLog.created_at)}</span>
+                  </div>
+                  <p>{auditLog.detail}</p>
+                  <p>Actor: {auditLog.actor_user_id}</p>
+                  <p>Target: {auditLog.target_id}</p>
+                </div>
+              ))
+            ) : (
+              <p>No admin actions have been logged yet.</p>
             )}
           </section>
 

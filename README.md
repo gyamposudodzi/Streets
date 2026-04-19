@@ -51,6 +51,7 @@ Suggested next steps:
 ## Key Docs
 
 - [Roadmap](./roadmap.md)
+- [Project Details](./project-details.md)
 - [Architecture](./docs/architecture.md)
 - [Engineering Standards](./docs/engineering-standards.md)
 - [Product Guardrails](./docs/product-guardrails.md)

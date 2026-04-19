@@ -1,3 +1,7 @@
+import os
+
+os.environ.setdefault("STREETS_SQLITE_PATH", "backend/data/streets_test.db")
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -800,6 +804,11 @@ def test_services_require_admin_approval_before_public_discovery() -> None:
     )
     assert approve_response.status_code == 200
     assert approve_response.json()["moderation_status"] == "approved"
+
+    audit_response = client.get("/api/v1/admin/audit-logs", headers=admin_headers)
+    assert audit_response.status_code == 200
+    assert audit_response.json()[0]["action"] == "service.approved"
+    assert audit_response.json()[0]["target_id"] == service["id"]
 
     public_detail_after_approval = client.get(f"/api/v1/services/{service['id']}")
     assert public_detail_after_approval.status_code == 200

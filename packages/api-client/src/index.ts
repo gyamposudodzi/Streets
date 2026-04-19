@@ -3,6 +3,7 @@ import type {
   AdminOverview,
   AppUser,
   AuthSession,
+  AuditLog,
   AvailabilitySlot,
   Booking,
   BookingEvent,
@@ -359,6 +360,14 @@ export function getAdminOverview(accessToken: string) {
 
 export function getAdminDashboard(accessToken: string) {
   return fetchJson<AdminDashboard>("/api/v1/admin/dashboard", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function listAdminAuditLogs(accessToken: string) {
+  return fetchJson<AuditLog[]>("/api/v1/admin/audit-logs", {
     headers: {
       Authorization: `Bearer ${accessToken}`
     }
