@@ -68,6 +68,8 @@ class Service(BaseModel):
     fulfillment_type: FulfillmentType
     is_active: bool = True
     moderation_status: ServiceModerationStatus = ServiceModerationStatus.PENDING_REVIEW
+    compliance_score: int = 0
+    compliance_notes: str | None = None
     created_at: datetime = Field(default_factory=utc_now)
 
 
@@ -177,4 +179,13 @@ class AuditLog(BaseModel):
     target_type: str
     target_id: str
     detail: str
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class ModerationRule(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    pattern: str
+    label: str
+    action: str = "hold"
+    is_active: bool = True
     created_at: datetime = Field(default_factory=utc_now)

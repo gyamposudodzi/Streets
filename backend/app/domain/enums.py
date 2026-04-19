@@ -99,6 +99,8 @@ class AuditAction(StrEnum):
     FUNDS_REFUNDED = "funds.refunded"
     REPORT_RESOLVED = "report.resolved"
     DISPUTE_RESOLVED = "dispute.resolved"
+    MODERATION_RULE_CREATED = "moderation_rule.created"
+    MODERATION_RULE_UPDATED = "moderation_rule.updated"
 
 
 class ServiceModerationStatus(StrEnum):

@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS services (
     fulfillment_type TEXT NOT NULL,
     is_active INTEGER NOT NULL DEFAULT 1,
     moderation_status TEXT NOT NULL DEFAULT 'pending_review',
+    compliance_score INTEGER NOT NULL DEFAULT 0,
+    compliance_notes TEXT,
     created_at TEXT NOT NULL
 );
 
@@ -153,6 +155,15 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS moderation_rules (
+    id TEXT PRIMARY KEY,
+    pattern TEXT NOT NULL,
+    label TEXT NOT NULL,
+    action TEXT NOT NULL DEFAULT 'hold',
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_services_creator_id ON services (creator_id);
 CREATE INDEX IF NOT EXISTS idx_services_category ON services (category);
 CREATE INDEX IF NOT EXISTS idx_services_fulfillment_type ON services (fulfillment_type);
@@ -170,3 +181,4 @@ CREATE INDEX IF NOT EXISTS idx_disputes_booking_id ON disputes (booking_id);
 CREATE INDEX IF NOT EXISTS idx_disputes_status ON disputes (status);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs (actor_user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_target ON audit_logs (target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_moderation_rules_active ON moderation_rules (is_active);

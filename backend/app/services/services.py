@@ -5,6 +5,7 @@ from app.models.entities import AvailabilitySlot, Service
 from app.repositories.sqlite import repository
 from app.schemas.availability import AvailabilitySlotCreateRequest
 from app.schemas.services import ServiceCreateRequest, ServiceUpdateRequest
+from app.services.moderation import scan_service_listing
 
 
 def create_service(creator_id: str, payload: ServiceCreateRequest) -> Service:
@@ -24,7 +25,14 @@ def create_service(creator_id: str, payload: ServiceCreateRequest) -> Service:
         price=payload.price,
         currency=payload.currency,
         fulfillment_type=payload.fulfillment_type,
-        moderation_status=ServiceModerationStatus.PENDING_REVIEW,
+    )
+    compliance = scan_service_listing(service)
+    service.compliance_score = compliance.score
+    service.compliance_notes = compliance.notes
+    service.moderation_status = (
+        ServiceModerationStatus.PENDING_REVIEW
+        if compliance.should_hold
+        else ServiceModerationStatus.APPROVED
     )
     return repository.create_service(service)
 
@@ -41,7 +49,19 @@ def update_service(
             detail="Service not found for that creator.",
         )
 
-    updated = repository.update_service(service_id, **payload.model_dump())
+    changes = payload.model_dump()
+    preview = service.model_copy(update={field: value for field, value in changes.items() if value is not None})
+    if any(changes.get(field) is not None for field in ("title", "description", "category", "fulfillment_type")):
+        compliance = scan_service_listing(preview)
+        changes["compliance_score"] = compliance.score
+        changes["compliance_notes"] = compliance.notes
+        changes["moderation_status"] = (
+            ServiceModerationStatus.PENDING_REVIEW
+            if compliance.should_hold
+            else ServiceModerationStatus.APPROVED
+        )
+
+    updated = repository.update_service(service_id, **changes)
     return updated
 
 

@@ -743,7 +743,7 @@ def test_reports_can_be_created_and_resolved_by_admin() -> None:
     assert resolve_response.json()["status"] == "resolved"
 
 
-def test_services_require_admin_approval_before_public_discovery() -> None:
+def test_clean_services_auto_approve_and_flagged_services_wait_for_review() -> None:
     creator_register = client.post(
         "/api/v1/auth/register",
         json={
@@ -776,7 +776,7 @@ def test_services_require_admin_approval_before_public_discovery() -> None:
         f"/api/v1/services/creator/{creator_id}",
         json={
             "title": "Pending review service",
-            "description": "Should not be public until approved.",
+            "description": "Please coordinate on whatsapp before the booking.",
             "category": "consulting",
             "duration_minutes": 30,
             "price": 10000,
@@ -788,6 +788,7 @@ def test_services_require_admin_approval_before_public_discovery() -> None:
     assert service_response.status_code == 201
     service = service_response.json()
     assert service["moderation_status"] == "pending_review"
+    assert service["compliance_score"] > 0
 
     public_detail = client.get(f"/api/v1/services/{service['id']}")
     assert public_detail.status_code == 404
@@ -812,3 +813,21 @@ def test_services_require_admin_approval_before_public_discovery() -> None:
 
     public_detail_after_approval = client.get(f"/api/v1/services/{service['id']}")
     assert public_detail_after_approval.status_code == 200
+
+    clean_service_response = client.post(
+        f"/api/v1/services/creator/{creator_id}",
+        json={
+            "title": "Clean consulting session",
+            "description": "Structured planning and booking-managed coordination.",
+            "category": "consulting",
+            "duration_minutes": 30,
+            "price": 10000,
+            "currency": "USD",
+            "fulfillment_type": "video",
+        },
+        headers=creator_headers,
+    )
+    assert clean_service_response.status_code == 201
+    clean_service = clean_service_response.json()
+    assert clean_service["moderation_status"] == "approved"
+    assert clean_service["compliance_score"] == 0

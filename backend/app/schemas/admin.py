@@ -5,6 +5,7 @@ from app.schemas.auth import UserResponse
 from app.schemas.bookings import BookingResponse
 from app.schemas.creators import CreatorSummaryResponse
 from app.schemas.disputes import DisputeResponse
+from app.schemas.moderation import ModerationRuleResponse
 from app.schemas.reports import ReportResponse
 from app.schemas.services import ServiceResponse
 
@@ -27,3 +28,4 @@ class AdminDashboardResponse(BaseModel):
     reports: list[ReportResponse]
     disputes: list[DisputeResponse]
     audit_logs: list[AuditLogResponse]
+    moderation_rules: list[ModerationRuleResponse]

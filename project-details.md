@@ -62,8 +62,8 @@ Creator flow:
 1. Creator registers or signs in.
 2. Creator edits profile.
 3. Creator creates services and availability slots.
-4. Services start as pending review.
-5. Admin approves services before public discovery.
+4. Clean services auto-approve for public discovery.
+5. Services matching admin-managed hold rules stay pending until reviewed.
 6. Creator views bookings.
 7. Creator accepts, starts, and delivers paid bookings.
 
@@ -71,7 +71,7 @@ Admin flow:
 
 1. Admin signs in through the admin app.
 2. Admin dashboard loads users, creators, services, bookings, reports, and disputes.
-3. Admin approves or rejects service listings.
+3. Admin controls public wording rules and reviews held listings when needed.
 4. Admin can accept/cancel bookings when needed.
 5. Admin can release or refund held funds.
 6. Admin can resolve reports.
@@ -149,6 +149,9 @@ Admin:
 - `GET /admin/disputes`
 - `POST /admin/disputes/{dispute_id}/resolve`
 - `GET /admin/audit-logs`
+- `GET /admin/moderation-rules`
+- `POST /admin/moderation-rules`
+- `PATCH /admin/moderation-rules/{rule_id}`
 
 ## Domain States
 
@@ -227,6 +230,8 @@ Audit actions:
 - `funds.refunded`
 - `report.resolved`
 - `dispute.resolved`
+- `moderation_rule.created`
+- `moderation_rule.updated`
 
 ## Database Tables
 
@@ -246,6 +251,7 @@ Current SQLite and PostgreSQL schema targets include:
 - `reports`: moderation reports.
 - `disputes`: booking money/fulfillment disputes.
 - `audit_logs`: append-only admin action trail for moderation, booking, dispute, and money decisions.
+- `moderation_rules`: admin-managed public wording rules used to flag or hold service listings.
 
 ## Repository Map
 
@@ -332,6 +338,7 @@ Current SQLite and PostgreSQL schema targets include:
 - `backend/app/schemas/disputes.py`: dispute create/resolve/response schemas.
 - `backend/app/schemas/messages.py`: booking message request/response schemas.
 - `backend/app/schemas/meta.py`: metadata response schema.
+- `backend/app/schemas/moderation.py`: moderation rule create/update/response schemas.
 - `backend/app/schemas/payments.py`: payment intent, payment, held funds, ledger, and booking payment-state schemas.
 - `backend/app/schemas/reports.py`: report create/resolve/response schemas.
 - `backend/app/schemas/services.py`: service create/update/response schemas.
@@ -351,6 +358,7 @@ Current SQLite and PostgreSQL schema targets include:
 - `backend/app/services/bookings.py`: booking creation, accept/cancel/start/deliver/complete/dispute business rules.
 - `backend/app/services/payments.py`: simulated payment intent, payment success, held funds, ledger creation, admin release, and admin refund logic.
 - `backend/app/services/messages.py`: booking participant/admin authorization and message creation.
+- `backend/app/services/moderation.py`: public listing compliance scanner using admin-managed rules.
 - `backend/app/services/reports.py`: report creation, risk scoring, and status resolution logic.
 
 ### Workers
@@ -422,12 +430,12 @@ Current SQLite and PostgreSQL schema targets include:
 ### API Client
 
 - `packages/api-client/package.json`: package metadata for shared API client.
-- `packages/api-client/src/index.ts`: typed `fetch` wrappers for marketplace/admin/backend interaction, including auth, creators, services, bookings, payments, messages, reports, disputes, audit logs, and admin actions.
+- `packages/api-client/src/index.ts`: typed `fetch` wrappers for marketplace/admin/backend interaction, including auth, creators, services, bookings, payments, messages, reports, disputes, audit logs, moderation rules, and admin actions.
 
 ### Types
 
 - `packages/types/package.json`: package metadata for shared TypeScript types.
-- `packages/types/src/index.ts`: shared TypeScript domain types for users, creators, services, bookings, payments, held funds, ledger entries, messages, reports, disputes, audit logs, auth sessions, and admin dashboard responses.
+- `packages/types/src/index.ts`: shared TypeScript domain types for users, creators, services, bookings, payments, held funds, ledger entries, messages, reports, disputes, audit logs, moderation rules, auth sessions, and admin dashboard responses.
 
 ### UI
 

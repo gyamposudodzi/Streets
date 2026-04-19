@@ -16,6 +16,7 @@ import type {
   Payment,
   PaymentIntent,
   HeldFunds,
+  ModerationRule,
   Report,
   ReportStatus,
   ReportTargetType,
@@ -368,6 +369,43 @@ export function getAdminDashboard(accessToken: string) {
 
 export function listAdminAuditLogs(accessToken: string) {
   return fetchJson<AuditLog[]>("/api/v1/admin/audit-logs", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function createModerationRule(
+  input: {
+    pattern: string;
+    label: string;
+    action: string;
+    is_active?: boolean;
+  },
+  accessToken: string
+) {
+  return fetchJson<ModerationRule>("/api/v1/admin/moderation-rules", {
+    method: "POST",
+    body: JSON.stringify(input),
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function updateModerationRule(
+  ruleId: string,
+  input: {
+    pattern?: string;
+    label?: string;
+    action?: string;
+    is_active?: boolean;
+  },
+  accessToken: string
+) {
+  return fetchJson<ModerationRule>(`/api/v1/admin/moderation-rules/${ruleId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
     headers: {
       Authorization: `Bearer ${accessToken}`
     }

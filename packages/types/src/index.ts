@@ -58,6 +58,8 @@ export type Service = {
   fulfillment_type: FulfillmentType;
   is_active: boolean;
   moderation_status: ServiceModerationStatus;
+  compliance_score: number;
+  compliance_notes: string | null;
   created_at: string;
 };
 
@@ -204,7 +206,9 @@ export type AuditAction =
   | "funds.released"
   | "funds.refunded"
   | "report.resolved"
-  | "dispute.resolved";
+  | "dispute.resolved"
+  | "moderation_rule.created"
+  | "moderation_rule.updated";
 
 export type AuditLog = {
   id: string;
@@ -213,6 +217,15 @@ export type AuditLog = {
   target_type: string;
   target_id: string;
   detail: string;
+  created_at: string;
+};
+
+export type ModerationRule = {
+  id: string;
+  pattern: string;
+  label: string;
+  action: string;
+  is_active: boolean;
   created_at: string;
 };
 
@@ -251,4 +264,5 @@ export type AdminDashboard = {
   reports: Report[];
   disputes: Dispute[];
   audit_logs: AuditLog[];
+  moderation_rules: ModerationRule[];
 };

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies import require_admin_user
-from app.models.entities import User
+from app.models.entities import ModerationRule, User
 from app.repositories.sqlite import repository
 from app.schemas.admin import AdminDashboardResponse, AdminOverviewResponse
 from app.schemas.audit import AuditLogResponse
@@ -11,6 +11,11 @@ from app.schemas.auth import UserResponse
 from app.schemas.bookings import BookingResponse
 from app.schemas.creators import CreatorSummaryResponse
 from app.schemas.disputes import DisputeResolveRequest, DisputeResponse
+from app.schemas.moderation import (
+    ModerationRuleCreateRequest,
+    ModerationRuleResponse,
+    ModerationRuleUpdateRequest,
+)
 from app.schemas.services import ServiceResponse
 from app.schemas.payments import HeldFundsResponse
 from app.schemas.reports import ReportResolveRequest, ReportResponse
@@ -136,6 +141,61 @@ def admin_audit_logs(_: User = Depends(require_admin_user)) -> list[AuditLogResp
     ]
 
 
+@router.get("/moderation-rules", response_model=list[ModerationRuleResponse])
+def admin_moderation_rules(
+    _: User = Depends(require_admin_user),
+) -> list[ModerationRuleResponse]:
+    return [
+        ModerationRuleResponse.model_validate(rule.model_dump())
+        for rule in repository.list_moderation_rules()
+    ]
+
+
+@router.post("/moderation-rules", response_model=ModerationRuleResponse)
+def admin_create_moderation_rule(
+    payload: ModerationRuleCreateRequest,
+    actor: User = Depends(require_admin_user),
+) -> ModerationRuleResponse:
+    rule = repository.create_moderation_rule(
+        ModerationRule(
+            pattern=payload.pattern,
+            label=payload.label,
+            action=payload.action,
+            is_active=payload.is_active,
+        )
+    )
+    record_admin_action(
+        actor,
+        AuditAction.MODERATION_RULE_CREATED,
+        target_type="moderation_rule",
+        target_id=rule.id,
+        detail=f"Admin created public wording rule: {rule.label}.",
+    )
+    return ModerationRuleResponse.model_validate(rule.model_dump())
+
+
+@router.patch("/moderation-rules/{rule_id}", response_model=ModerationRuleResponse)
+def admin_update_moderation_rule(
+    rule_id: str,
+    payload: ModerationRuleUpdateRequest,
+    actor: User = Depends(require_admin_user),
+) -> ModerationRuleResponse:
+    rule = repository.update_moderation_rule(rule_id, **payload.model_dump())
+    if rule is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Moderation rule not found.",
+        )
+    record_admin_action(
+        actor,
+        AuditAction.MODERATION_RULE_UPDATED,
+        target_type="moderation_rule",
+        target_id=rule.id,
+        detail=f"Admin updated public wording rule: {rule.label}.",
+    )
+    return ModerationRuleResponse.model_validate(rule.model_dump())
+
+
 @router.get("/creators/{creator_id}/bookings", response_model=list[BookingResponse])
 def admin_creator_bookings(
     creator_id: str,
@@ -157,6 +217,7 @@ def admin_dashboard(_: User = Depends(require_admin_user)) -> AdminDashboardResp
     reports = repository.list_reports()
     disputes = repository.list_disputes()
     audit_logs = repository.list_audit_logs()
+    moderation_rules = repository.list_moderation_rules()
 
     return AdminDashboardResponse(
         overview=AdminOverviewResponse(
@@ -186,6 +247,10 @@ def admin_dashboard(_: User = Depends(require_admin_user)) -> AdminDashboardResp
         audit_logs=[
             AuditLogResponse.model_validate(audit_log.model_dump())
             for audit_log in audit_logs
+        ],
+        moderation_rules=[
+            ModerationRuleResponse.model_validate(rule.model_dump())
+            for rule in moderation_rules
         ],
     )
 

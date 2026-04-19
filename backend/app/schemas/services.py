@@ -17,6 +17,8 @@ class ServiceResponse(BaseModel):
     fulfillment_type: FulfillmentType
     is_active: bool
     moderation_status: ServiceModerationStatus
+    compliance_score: int = 0
+    compliance_notes: str | None = None
     created_at: datetime
 
 
@@ -46,4 +48,3 @@ class ServiceUpdateRequest(BaseModel):
     currency: str | None = None
     fulfillment_type: FulfillmentType | None = None
     is_active: bool | None = None
-    moderation_status: ServiceModerationStatus | None = None

@@ -11,10 +11,12 @@ import {
   adminResolveDispute,
   adminResolveReport,
   cancelBooking,
+  createModerationRule,
   getAdminDashboard,
   getBookingPaymentState,
   loginUser,
-  registerUser
+  registerUser,
+  updateModerationRule
 } from "@streets/api-client";
 import type {
   AdminDashboard as AdminDashboardData,
@@ -48,6 +50,9 @@ export function AdminDashboard() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+  const [rulePattern, setRulePattern] = useState("");
+  const [ruleLabel, setRuleLabel] = useState("");
+  const [ruleAction, setRuleAction] = useState("hold");
 
   useEffect(() => {
     setSession(readSession());
@@ -243,6 +248,48 @@ export function AdminDashboard() {
     }
   }
 
+  async function handleCreateModerationRule(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!session) {
+      return;
+    }
+    setError("");
+    setMessage("");
+    try {
+      await createModerationRule(
+        {
+          pattern: rulePattern,
+          label: ruleLabel,
+          action: ruleAction,
+          is_active: true
+        },
+        session.access_token
+      );
+      setRulePattern("");
+      setRuleLabel("");
+      setRuleAction("hold");
+      await reloadDashboard(session.access_token);
+      setMessage("Public wording rule created.");
+    } catch {
+      setError("Could not create public wording rule.");
+    }
+  }
+
+  async function handleToggleModerationRule(ruleId: string, isActive: boolean) {
+    if (!session) {
+      return;
+    }
+    setError("");
+    setMessage("");
+    try {
+      await updateModerationRule(ruleId, { is_active: !isActive }, session.access_token);
+      await reloadDashboard(session.access_token);
+      setMessage("Public wording rule updated.");
+    } catch {
+      setError("Could not update public wording rule.");
+    }
+  }
+
   if (!session) {
     return (
       <section className="hero">
@@ -363,6 +410,13 @@ export function AdminDashboard() {
                   <span>{service.fulfillment_type}</span>
                   <span>{service.moderation_status}</span>
                 </div>
+                {service.compliance_score > 0 ? (
+                  <p>
+                    Compliance score {service.compliance_score}: {service.compliance_notes}
+                  </p>
+                ) : (
+                  <p>Auto-approved public wording.</p>
+                )}
                 <div className="actions">
                   <button
                     className="button"
@@ -379,6 +433,60 @@ export function AdminDashboard() {
                     Reject
                   </button>
                 </div>
+              </div>
+            ))}
+          </section>
+
+          <section className="card stack">
+            <h2>Public wording rules</h2>
+            <p>
+              These admin-controlled rules scan public service listings. Clean listings
+              auto-approve; held listings stay out of public discovery until reviewed.
+            </p>
+            <form className="stack formShell" onSubmit={handleCreateModerationRule}>
+              <input
+                className="input"
+                value={rulePattern}
+                onChange={(event) => setRulePattern(event.target.value)}
+                placeholder="Pattern, word, or phrase"
+              />
+              <input
+                className="input"
+                value={ruleLabel}
+                onChange={(event) => setRuleLabel(event.target.value)}
+                placeholder="Admin label"
+              />
+              <select
+                className="input"
+                value={ruleAction}
+                onChange={(event) => setRuleAction(event.target.value)}
+              >
+                <option value="hold">Hold for review</option>
+                <option value="flag">Flag only</option>
+              </select>
+              <button
+                className="button"
+                type="submit"
+                disabled={!rulePattern.trim() || !ruleLabel.trim()}
+              >
+                Add rule
+              </button>
+            </form>
+            {dashboard.moderation_rules.map((rule) => (
+              <div key={rule.id} className="stack bookingRow">
+                <div className="row">
+                  <span>{rule.pattern}</span>
+                  <span>{rule.label}</span>
+                  <span>{rule.action}</span>
+                  <span>{rule.is_active ? "active" : "inactive"}</span>
+                </div>
+                <button
+                  className="button secondaryButton"
+                  type="button"
+                  onClick={() => handleToggleModerationRule(rule.id, rule.is_active)}
+                >
+                  {rule.is_active ? "Disable" : "Enable"}
+                </button>
               </div>
             ))}
           </section>

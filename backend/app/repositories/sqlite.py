@@ -15,6 +15,7 @@ from app.models.entities import (
     HeldFunds,
     LedgerEntry,
     Message,
+    ModerationRule,
     Payment,
     Report,
     Service,
@@ -67,6 +68,43 @@ class SQLiteRepository:
                 AND moderation_status = 'pending_review'
             """
         )
+        if "compliance_score" not in service_columns:
+            connection.execute(
+                "ALTER TABLE services ADD COLUMN compliance_score INTEGER NOT NULL DEFAULT 0"
+            )
+        if "compliance_notes" not in service_columns:
+            connection.execute("ALTER TABLE services ADD COLUMN compliance_notes TEXT")
+        self._seed_moderation_rules_if_needed(connection)
+
+    def _seed_moderation_rules_if_needed(self, connection: sqlite3.Connection) -> None:
+        row = connection.execute("SELECT COUNT(*) AS count FROM moderation_rules").fetchone()
+        if row["count"] > 0:
+            return
+        for pattern, label, action in (
+            ("whatsapp", "Off-platform contact", "hold"),
+            ("telegram", "Off-platform contact", "hold"),
+            ("cash app", "Off-platform payment", "hold"),
+            ("cashapp", "Off-platform payment", "hold"),
+            ("escort", "High-risk public wording", "hold"),
+            ("prostitution", "Illegal-service wording", "hold"),
+            ("phone number", "Direct contact request", "flag"),
+        ):
+            rule = ModerationRule(pattern=pattern, label=label, action=action)
+            connection.execute(
+                """
+                INSERT INTO moderation_rules (
+                    id, pattern, label, action, is_active, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    rule.id,
+                    rule.pattern,
+                    rule.label,
+                    rule.action,
+                    int(rule.is_active),
+                    rule.created_at.isoformat(),
+                ),
+            )
 
     def reset(self) -> None:
         with self._connect() as connection:
@@ -243,6 +281,11 @@ class SQLiteRepository:
             return None
         return AuditLog.model_validate(dict(row))
 
+    def _to_moderation_rule(self, row: sqlite3.Row | None) -> ModerationRule | None:
+        if row is None:
+            return None
+        return ModerationRule.model_validate(dict(row))
+
     def list_creators(self) -> list[CreatorProfile]:
         with self._connect() as connection:
             rows = connection.execute(
@@ -339,8 +382,9 @@ class SQLiteRepository:
                 """
                 INSERT INTO services (
                     id, creator_id, title, description, category, duration_minutes,
-                    price, currency, fulfillment_type, is_active, moderation_status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    price, currency, fulfillment_type, is_active, moderation_status,
+                    compliance_score, compliance_notes, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     service.id,
@@ -354,6 +398,8 @@ class SQLiteRepository:
                     service.fulfillment_type,
                     int(service.is_active),
                     service.moderation_status,
+                    service.compliance_score,
+                    service.compliance_notes,
                     service.created_at.isoformat(),
                 ),
             )
@@ -965,6 +1011,56 @@ class SQLiteRepository:
                 (limit,),
             ).fetchall()
         return [self._to_audit_log(row) for row in rows]
+
+    def list_moderation_rules(self, *, active_only: bool = False) -> list[ModerationRule]:
+        where = "WHERE is_active = 1" if active_only else ""
+        with self._connect() as connection:
+            rows = connection.execute(
+                f"SELECT * FROM moderation_rules {where} ORDER BY created_at DESC"
+            ).fetchall()
+        return [self._to_moderation_rule(row) for row in rows]
+
+    def get_moderation_rule(self, rule_id: str) -> ModerationRule | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM moderation_rules WHERE id = ?",
+                (rule_id,),
+            ).fetchone()
+        return self._to_moderation_rule(row)
+
+    def create_moderation_rule(self, rule: ModerationRule) -> ModerationRule:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO moderation_rules (
+                    id, pattern, label, action, is_active, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    rule.id,
+                    rule.pattern,
+                    rule.label,
+                    rule.action,
+                    int(rule.is_active),
+                    rule.created_at.isoformat(),
+                ),
+            )
+        return rule
+
+    def update_moderation_rule(self, rule_id: str, **changes: object) -> ModerationRule | None:
+        rule = self.get_moderation_rule(rule_id)
+        if rule is None:
+            return None
+        updates = {field: value for field, value in changes.items() if value is not None}
+        if not updates:
+            return rule
+        assignments = ", ".join(f"{field} = ?" for field in updates)
+        with self._connect() as connection:
+            connection.execute(
+                f"UPDATE moderation_rules SET {assignments} WHERE id = ?",
+                [*updates.values(), rule_id],
+            )
+        return self.get_moderation_rule(rule_id)
 
 
 repository = SQLiteRepository(settings.sqlite_path)

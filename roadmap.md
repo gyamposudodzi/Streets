@@ -26,7 +26,7 @@ Completed foundations:
 - Next.js marketplace app and Next.js admin app.
 - Shared TypeScript API client and shared type package.
 - Development auth with user, creator, and admin roles.
-- Creator profiles, service listings, service approval state, availability slots, booking creation, booking events, simulated payments, held funds, ledger entries, chat, reports, disputes, and admin release/refund tools.
+- Creator profiles, service listings, service moderation state, admin-managed public wording rules, availability slots, booking creation, booking events, simulated payments, held funds, ledger entries, chat, reports, disputes, and admin release/refund tools.
 
 Partially complete foundations:
 
@@ -35,7 +35,7 @@ Partially complete foundations:
 - Payment flow is simulated; no real payment service provider, webhook verification, payout rails, chargeback handling, or provider abstraction implementation exists yet.
 - Chat is persisted over HTTP, but WebSockets, Redis fanout, read receipts, attachments, retention rules, and moderation scanning are still pending.
 - Disputes exist with full release/refund resolution, and admin audit logs now capture key decisions. Partial refunds, evidence attachments, and admin notes are pending.
-- Service moderation approval exists, but automated prohibited-listing scans and media review are pending.
+- Public listing compliance rules exist with admin-controlled words/phrases. Clean services auto-approve; matched hold rules keep listings out of discovery for review. Media review is pending.
 - Admin dashboard exists, but it is still MVP-level and not permission-tiered.
 
 Not started:
@@ -166,6 +166,8 @@ Completed:
 - Service discovery, search filters, and service detail pages.
 - Service moderation state: pending review, approved, rejected.
 - Public discovery hides non-approved services.
+- Admin-managed public wording rules.
+- Clean services auto-approve; held-rule matches wait for review.
 - Availability slot creation/listing.
 - Booking creation with draft to pending payment event flow.
 - Booking events timeline.
@@ -279,7 +281,8 @@ Completed:
 - Reports table and API.
 - Report risk scoring baseline.
 - Admin report list and status updates.
-- Service approval/rejection for listing moderation.
+- Service approval/rejection for held listings.
+- Admin-managed public wording rules for listing compliance.
 - Dispute table and API.
 - Booking dispute creation freezes booking into disputed state.
 - Admin dispute list in dashboard.
@@ -289,7 +292,7 @@ Completed:
 
 Partially complete:
 
-- Moderation scans are keyword/risk-score MVP only.
+- Moderation scans are keyword/risk-score MVP only, with admin-managed rules.
 - No media moderation.
 - Audit logs are append-only at the app level, but stronger database immutability controls and richer metadata are still pending.
 - No account suspension/block controls.
@@ -298,7 +301,7 @@ Partially complete:
 Remaining build steps:
 
 1. Add `moderation_actions`.
-2. Add prohibited listing scanner for service titles/descriptions.
+2. Expand public wording scanner for service titles/descriptions.
 3. Add evidence attachments and admin notes to disputes.
 4. Add partial refund support.
 5. Add user/creator suspension and listing takedown tools.
@@ -365,7 +368,7 @@ Creator workflow:
 2. Creator creates/updates profile.
 3. Creator creates services and slots.
 4. New services default to pending review.
-5. Admin approves services before public discovery.
+5. Clean services auto-approve; admin reviews only held public-wording matches.
 6. Creator sees bookings.
 7. Creator accepts paid bookings.
 8. Creator marks work in progress and delivered.
@@ -384,7 +387,7 @@ Admin workflow:
 
 Recommended next steps from the current codebase:
 
-1. Add prohibited-listing scanning during service create/update.
+1. Expand public-listing compliance scanning during service create/update.
 2. Add dispute evidence fields and admin notes.
 3. Add formal payment provider abstraction and webhook event table.
 4. Add unpaid booking expiration and auto-release background job skeletons.
@@ -470,7 +473,7 @@ Recommended meeting mode values:
 The MVP is complete when:
 
 - Users can register, verify age, browse approved creators/services, and book a service.
-- Creators can create profiles, submit services for approval, accept bookings, and fulfill through chat, custom delivery, scheduled session, or neutral in-person booking flow.
+- Creators can create profiles, publish clean auto-approved services, resolve held listing wording with admin review when needed, accept bookings, and fulfill through chat, custom delivery, scheduled session, or neutral in-person booking flow.
 - Buyers can pay up front and funds remain held pending release/refund.
 - Admins can review creators, moderate listings, release/refund funds, and resolve disputes manually.
 - Core trust and compliance controls exist across auth, listings, payments, communications, disputes, and audit logs.
