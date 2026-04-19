@@ -309,6 +309,8 @@ def test_simulated_payment_moves_booking_to_held_funds() -> None:
     payment_state = payment_state_response.json()
     assert len(payment_state["held_funds"]) == 1
     assert len(payment_state["ledger_entries"]) == 3
+    assert len(payment_state["webhook_events"]) == 1
+    assert payment_state["webhook_events"][0]["status"] == "processed"
 
 
 def create_paid_booking_for_admin_action(email: str) -> tuple[str, dict[str, str]]:

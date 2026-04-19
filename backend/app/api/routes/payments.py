@@ -10,6 +10,7 @@ from app.schemas.payments import (
     PaymentIntentCreateRequest,
     PaymentIntentResponse,
     PaymentResponse,
+    PaymentWebhookEventResponse,
 )
 from app.services.payments import create_payment_intent, simulate_payment_success
 
@@ -22,11 +23,11 @@ def create_intent(
     payload: PaymentIntentCreateRequest,
     actor: User = Depends(require_current_user),
 ) -> PaymentIntentResponse:
-    payment = create_payment_intent(payload, actor)
+    payment, checkout_reference, message = create_payment_intent(payload, actor)
     return PaymentIntentResponse(
         payment=PaymentResponse.model_validate(payment.model_dump()),
-        checkout_reference=payment.provider_payment_id,
-        message="Simulated payment intent created. Use simulate-success in development.",
+        checkout_reference=checkout_reference,
+        message=message,
     )
 
 
@@ -44,6 +45,7 @@ def booking_payment_state(booking_id: str) -> BookingPaymentStateResponse:
     payments = repository.list_payments_for_booking(booking_id)
     held_funds = repository.list_held_funds_for_booking(booking_id)
     ledger_entries = repository.list_ledger_entries_for_booking(booking_id)
+    webhook_events = repository.list_payment_webhook_events_for_booking(booking_id)
     return BookingPaymentStateResponse(
         payments=[PaymentResponse.model_validate(payment.model_dump()) for payment in payments],
         held_funds=[
@@ -51,5 +53,9 @@ def booking_payment_state(booking_id: str) -> BookingPaymentStateResponse:
         ],
         ledger_entries=[
             LedgerEntryResponse.model_validate(entry.model_dump()) for entry in ledger_entries
+        ],
+        webhook_events=[
+            PaymentWebhookEventResponse.model_validate(event.model_dump())
+            for event in webhook_events
         ],
     )

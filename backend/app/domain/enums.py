@@ -50,6 +50,13 @@ class PaymentStatus(StrEnum):
     REFUNDED = "refunded"
 
 
+class PaymentWebhookEventStatus(StrEnum):
+    RECEIVED = "received"
+    PROCESSED = "processed"
+    IGNORED = "ignored"
+    FAILED = "failed"
+
+
 class HeldFundsStatus(StrEnum):
     HELD = "held"
     RELEASED = "released"

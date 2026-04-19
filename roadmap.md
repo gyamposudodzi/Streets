@@ -32,7 +32,7 @@ Partially complete foundations:
 
 - Age gate exists as a registration flag, but there is no production-grade age verification provider.
 - Email verification is represented in the data model, but no email/OTP delivery flow exists yet.
-- Payment flow is simulated; no real payment service provider, webhook verification, payout rails, chargeback handling, or provider abstraction implementation exists yet.
+- Payment flow is simulated behind an internal provider abstraction with provider-event storage. No real payment service provider, signed webhook verification, payout rails, or chargeback handling exists yet.
 - Chat is persisted over HTTP, but WebSockets, Redis fanout, read receipts, attachments, retention rules, and moderation scanning are still pending.
 - Disputes exist with full release/refund resolution, and admin audit logs now capture key decisions. Partial refunds, evidence attachments, and admin notes are pending.
 - Public listing compliance rules exist with admin-controlled words/phrases. Clean services auto-approve; matched hold rules keep listings out of discovery for review. Media review is pending.
@@ -200,6 +200,9 @@ Completed:
 
 - Payment intent creation endpoint.
 - Simulated payment success endpoint.
+- Internal payment provider interface.
+- Simulated payment provider implementation.
+- Payment webhook/provider event storage.
 - Held-funds records.
 - Ledger entries for captured payment, platform fee, held creator funds, release, and refund.
 - Admin release/refund endpoints.
@@ -208,16 +211,16 @@ Completed:
 
 Partially complete:
 
-- Payment provider abstraction is not yet formalized as an interface/adapters package.
-- Webhook verification and webhook event storage are pending.
+- Webhook signature verification is pending.
+- Only the simulated provider exists.
 - Refunds/payouts are represented through held funds and ledger state, but dedicated `refunds` and `payouts` tables are pending.
 - Reconciliation dashboard is MVP-level through booking payment state.
 
 Remaining build steps:
 
-1. Define internal payment provider interface.
-2. Add provider adapter skeletons.
-3. Add webhook signature verification and webhook event log.
+1. Add real provider adapter skeletons.
+2. Add webhook signature verification.
+3. Add provider event retry/error handling.
 4. Add refunds and payouts tables.
 5. Add payout batching and reconciliation views.
 
@@ -392,7 +395,7 @@ Recommended next steps from the current codebase:
 
 1. Expand public-listing compliance scanning during service create/update.
 2. Add dispute evidence fields and admin notes.
-3. Add formal payment provider abstraction and webhook event table.
+3. Add real payment provider adapter skeletons and webhook signature verification.
 4. Add unpaid booking expiration and auto-release background job skeletons.
 5. Add notification records and email/push adapter skeletons.
 6. Add in-person logistics fields behind neutral language and masked coordination rules.

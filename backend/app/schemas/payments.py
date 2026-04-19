@@ -2,7 +2,12 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.domain.enums import HeldFundsStatus, LedgerEntryType, PaymentStatus
+from app.domain.enums import (
+    HeldFundsStatus,
+    LedgerEntryType,
+    PaymentStatus,
+    PaymentWebhookEventStatus,
+)
 
 
 class PaymentIntentCreateRequest(BaseModel):
@@ -39,6 +44,18 @@ class HeldFundsResponse(BaseModel):
     created_at: datetime
 
 
+class PaymentWebhookEventResponse(BaseModel):
+    id: str
+    provider: str
+    provider_event_id: str
+    event_type: str
+    payment_id: str | None
+    payload: str
+    status: PaymentWebhookEventStatus
+    created_at: datetime
+    processed_at: datetime | None
+
+
 class LedgerEntryResponse(BaseModel):
     id: str
     account_type: str
@@ -54,3 +71,4 @@ class BookingPaymentStateResponse(BaseModel):
     payments: list[PaymentResponse]
     held_funds: list[HeldFundsResponse]
     ledger_entries: list[LedgerEntryResponse]
+    webhook_events: list[PaymentWebhookEventResponse] = []

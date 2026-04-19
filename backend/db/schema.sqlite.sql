@@ -91,6 +91,18 @@ CREATE TABLE IF NOT EXISTS payments (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS payment_webhook_events (
+    id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    provider_event_id TEXT NOT NULL UNIQUE,
+    event_type TEXT NOT NULL,
+    payment_id TEXT REFERENCES payments(id) ON DELETE SET NULL,
+    payload TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    processed_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS held_funds (
     id TEXT PRIMARY KEY,
     booking_id TEXT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
@@ -172,6 +184,8 @@ CREATE INDEX IF NOT EXISTS idx_bookings_buyer_id ON bookings (buyer_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_creator_id ON bookings (creator_id);
 CREATE INDEX IF NOT EXISTS idx_booking_events_booking_id ON booking_events (booking_id);
 CREATE INDEX IF NOT EXISTS idx_payments_booking_id ON payments (booking_id);
+CREATE INDEX IF NOT EXISTS idx_payment_webhook_events_provider ON payment_webhook_events (provider, provider_event_id);
+CREATE INDEX IF NOT EXISTS idx_payment_webhook_events_payment_id ON payment_webhook_events (payment_id);
 CREATE INDEX IF NOT EXISTS idx_held_funds_booking_id ON held_funds (booking_id);
 CREATE INDEX IF NOT EXISTS idx_ledger_entries_booking_id ON ledger_entries (booking_id);
 CREATE INDEX IF NOT EXISTS idx_messages_booking_id ON messages (booking_id);

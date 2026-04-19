@@ -165,6 +165,19 @@ export function PaymentPanel({ bookingId, bookingStatus }: PaymentPanelProps) {
             <p>No ledger entries yet.</p>
           )}
         </article>
+
+        <article className="card">
+          <h3>Provider events</h3>
+          {paymentState?.webhook_events.length ? (
+            paymentState.webhook_events.map((event) => (
+              <p key={event.id}>
+                {event.event_type}: {event.status}
+              </p>
+            ))
+          ) : (
+            <p>No provider events yet.</p>
+          )}
+        </article>
       </div>
     </section>
   );

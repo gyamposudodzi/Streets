@@ -104,6 +104,12 @@ export type PaymentStatus =
 
 export type HeldFundsStatus = "held" | "released" | "refunded";
 
+export type PaymentWebhookEventStatus =
+  | "received"
+  | "processed"
+  | "ignored"
+  | "failed";
+
 export type LedgerEntryType =
   | "payment_captured"
   | "funds_held"
@@ -141,6 +147,18 @@ export type HeldFunds = {
   created_at: string;
 };
 
+export type PaymentWebhookEvent = {
+  id: string;
+  provider: string;
+  provider_event_id: string;
+  event_type: string;
+  payment_id: string | null;
+  payload: string;
+  status: PaymentWebhookEventStatus;
+  created_at: string;
+  processed_at: string | null;
+};
+
 export type LedgerEntry = {
   id: string;
   account_type: string;
@@ -156,6 +174,7 @@ export type BookingPaymentState = {
   payments: Payment[];
   held_funds: HeldFunds[];
   ledger_entries: LedgerEntry[];
+  webhook_events: PaymentWebhookEvent[];
 };
 
 export type BookingMessage = {

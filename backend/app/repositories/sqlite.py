@@ -17,6 +17,7 @@ from app.models.entities import (
     Message,
     ModerationRule,
     Payment,
+    PaymentWebhookEvent,
     Report,
     Service,
     Session,
@@ -116,6 +117,7 @@ class SQLiteRepository:
                 "messages",
                 "ledger_entries",
                 "held_funds",
+                "payment_webhook_events",
                 "payments",
                 "booking_events",
                 "bookings",
@@ -250,6 +252,11 @@ class SQLiteRepository:
         if row is None:
             return None
         return Payment.model_validate(dict(row))
+
+    def _to_payment_webhook_event(self, row: sqlite3.Row | None) -> PaymentWebhookEvent | None:
+        if row is None:
+            return None
+        return PaymentWebhookEvent.model_validate(dict(row))
 
     def _to_held_funds(self, row: sqlite3.Row | None) -> HeldFunds | None:
         if row is None:
@@ -773,6 +780,85 @@ class SQLiteRepository:
                 (status, payment_id),
             )
         return self.get_payment(payment_id)
+
+    def create_payment_webhook_event(self, event: PaymentWebhookEvent) -> PaymentWebhookEvent:
+        with self._connect() as connection:
+            existing = connection.execute(
+                """
+                SELECT * FROM payment_webhook_events
+                WHERE provider = ? AND provider_event_id = ?
+                """,
+                (event.provider, event.provider_event_id),
+            ).fetchone()
+            if existing is not None:
+                return self._to_payment_webhook_event(existing)
+            connection.execute(
+                """
+                INSERT INTO payment_webhook_events (
+                    id, provider, provider_event_id, event_type, payment_id,
+                    payload, status, created_at, processed_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event.id,
+                    event.provider,
+                    event.provider_event_id,
+                    event.event_type,
+                    event.payment_id,
+                    event.payload,
+                    event.status,
+                    event.created_at.isoformat(),
+                    event.processed_at.isoformat() if event.processed_at else None,
+                ),
+            )
+        return event
+
+    def list_payment_webhook_events_for_payment(self, payment_id: str) -> list[PaymentWebhookEvent]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT * FROM payment_webhook_events
+                WHERE payment_id = ?
+                ORDER BY created_at DESC
+                """,
+                (payment_id,),
+            ).fetchall()
+        return [self._to_payment_webhook_event(row) for row in rows]
+
+    def list_payment_webhook_events_for_booking(self, booking_id: str) -> list[PaymentWebhookEvent]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT payment_webhook_events.*
+                FROM payment_webhook_events
+                JOIN payments ON payments.id = payment_webhook_events.payment_id
+                WHERE payments.booking_id = ?
+                ORDER BY payment_webhook_events.created_at DESC
+                """,
+                (booking_id,),
+            ).fetchall()
+        return [self._to_payment_webhook_event(row) for row in rows]
+
+    def update_payment_webhook_event_status(
+        self,
+        event_id: str,
+        status: str,
+        processed_at: str | None,
+    ) -> PaymentWebhookEvent | None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                UPDATE payment_webhook_events
+                SET status = ?, processed_at = ?
+                WHERE id = ?
+                """,
+                (status, processed_at, event_id),
+            )
+            row = connection.execute(
+                "SELECT * FROM payment_webhook_events WHERE id = ?",
+                (event_id,),
+            ).fetchone()
+        return self._to_payment_webhook_event(row)
 
     def create_held_funds(self, held_funds: HeldFunds) -> HeldFunds:
         with self._connect() as connection:

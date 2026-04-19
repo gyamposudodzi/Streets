@@ -1,18 +1,26 @@
-from uuid import uuid4
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 
-from app.domain.enums import AuditAction, BookingStatus, HeldFundsStatus, LedgerEntryType, PaymentStatus
+from app.domain.enums import (
+    AuditAction,
+    BookingStatus,
+    HeldFundsStatus,
+    LedgerEntryType,
+    PaymentStatus,
+    PaymentWebhookEventStatus,
+)
 from app.models.entities import HeldFunds, LedgerEntry, Payment, User
 from app.repositories.sqlite import repository
 from app.schemas.payments import PaymentIntentCreateRequest
 from app.services.audit import record_admin_action
+from app.services.payment_providers import get_payment_provider
 
 
 PLATFORM_FEE_RATE = 0.2
 
 
-def create_payment_intent(payload: PaymentIntentCreateRequest, actor: User) -> Payment:
+def create_payment_intent(payload: PaymentIntentCreateRequest, actor: User) -> tuple[Payment, str, str]:
     booking = repository.get_booking(payload.booking_id)
     if booking is None:
         raise HTTPException(
@@ -39,17 +47,21 @@ def create_payment_intent(payload: PaymentIntentCreateRequest, actor: User) -> P
 
     platform_fee = int(service.price * PLATFORM_FEE_RATE)
     creator_amount = service.price - platform_fee
+    provider = get_payment_provider(payload.provider)
     payment = Payment(
         booking_id=booking.id,
-        provider=payload.provider,
-        provider_payment_id=f"sim_{uuid4().hex}",
+        provider=provider.name,
+        provider_payment_id="pending",
         gross_amount=service.price,
         platform_fee=platform_fee,
         creator_amount=creator_amount,
         currency=service.currency,
         status=PaymentStatus.REQUIRES_ACTION,
     )
-    return repository.create_payment(payment)
+    intent = provider.create_payment_intent(payment)
+    payment.provider_payment_id = intent.provider_payment_id
+    created = repository.create_payment(payment)
+    return created, intent.checkout_reference, intent.message
 
 
 def simulate_payment_success(payment_id: str, actor: User) -> tuple[Payment, HeldFunds]:
@@ -76,6 +88,12 @@ def simulate_payment_success(payment_id: str, actor: User) -> tuple[Payment, Hel
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Payment is not awaiting action.",
         )
+
+    provider = get_payment_provider(payment.provider)
+    event = repository.create_payment_webhook_event(provider.build_success_event(payment))
+    if event.status == PaymentWebhookEventStatus.PROCESSED:
+        held = repository.list_held_funds_for_booking(payment.booking_id)[0]
+        return payment, held
 
     updated_payment = repository.update_payment_status(payment.id, PaymentStatus.SUCCEEDED)
     held_funds = repository.create_held_funds(
@@ -118,6 +136,11 @@ def simulate_payment_success(payment_id: str, actor: User) -> tuple[Payment, Hel
         )
     )
     repository.mark_booking_paid_pending_acceptance(booking.id, actor_user_id=actor.id)
+    repository.update_payment_webhook_event_status(
+        event.id,
+        PaymentWebhookEventStatus.PROCESSED,
+        datetime.now(UTC).isoformat(),
+    )
 
     return updated_payment, held_funds
 

@@ -11,6 +11,7 @@ from app.domain.enums import (
     FulfillmentType,
     HeldFundsStatus,
     LedgerEntryType,
+    PaymentWebhookEventStatus,
     PaymentStatus,
     ReportStatus,
     ReportTargetType,
@@ -116,6 +117,18 @@ class Payment(BaseModel):
     currency: str = "USD"
     status: PaymentStatus = PaymentStatus.REQUIRES_ACTION
     created_at: datetime = Field(default_factory=utc_now)
+
+
+class PaymentWebhookEvent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    provider: str
+    provider_event_id: str
+    event_type: str
+    payment_id: str | None = None
+    payload: str
+    status: PaymentWebhookEventStatus = PaymentWebhookEventStatus.RECEIVED
+    created_at: datetime = Field(default_factory=utc_now)
+    processed_at: datetime | None = None
 
 
 class HeldFunds(BaseModel):

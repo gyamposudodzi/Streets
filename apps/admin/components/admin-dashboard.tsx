@@ -687,9 +687,15 @@ export function AdminDashboard() {
                       <p>Payments: {paymentStates[booking.id].payments.length}</p>
                       <p>Held funds: {paymentStates[booking.id].held_funds.length}</p>
                       <p>Ledger entries: {paymentStates[booking.id].ledger_entries.length}</p>
+                      <p>Provider events: {paymentStates[booking.id].webhook_events.length}</p>
                       {paymentStates[booking.id].ledger_entries.map((entry) => (
                         <p key={entry.id}>
                           {entry.entry_type}: {entry.amount} {entry.currency}
+                        </p>
+                      ))}
+                      {paymentStates[booking.id].webhook_events.map((event) => (
+                        <p key={event.id}>
+                          {event.event_type}: {event.status}
                         </p>
                       ))}
                     </div>

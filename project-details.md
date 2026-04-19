@@ -125,6 +125,12 @@ Payments:
 - `POST /payments/{payment_id}/simulate-success`
 - `GET /payments/bookings/{booking_id}`
 
+Payment provider notes:
+
+- Current payments use `SimulatedPaymentProvider`.
+- Provider-facing events are persisted in `payment_webhook_events`.
+- The internal provider interface defines payment intent creation, webhook verification, webhook parsing, refund hooks, and simulated success-event creation.
+
 Messages:
 
 - `GET /messages/bookings/{booking_id}`
@@ -247,7 +253,8 @@ Current SQLite and PostgreSQL schema targets include:
 - `availability_slots`: service-specific availability.
 - `bookings`: buyer/creator/service booking record and lifecycle status.
 - `booking_events`: timeline of booking lifecycle changes.
-- `payments`: simulated provider payment records.
+- `payments`: provider-agnostic payment records.
+- `payment_webhook_events`: provider/webhook-style events for payment processing and idempotency.
 - `held_funds`: creator amount held pending release/refund.
 - `ledger_entries`: money movement audit ledger.
 - `messages`: booking-scoped chat messages.
@@ -316,7 +323,7 @@ Current SQLite and PostgreSQL schema targets include:
 - `backend/app/api/routes/creators.py`: creator list/detail/profile update and creator booking lookup.
 - `backend/app/api/routes/services.py`: public service discovery, service details, creator service CRUD, and availability slot endpoints.
 - `backend/app/api/routes/bookings.py`: booking creation, timeline, accept, cancel, start, deliver, complete, and dispute endpoints.
-- `backend/app/api/routes/payments.py`: simulated payment intent, simulated payment success, and booking payment-state endpoints.
+- `backend/app/api/routes/payments.py`: payment intent, simulated payment success, provider event visibility, and booking payment-state endpoints.
 - `backend/app/api/routes/messages.py`: booking-scoped message read/write endpoints.
 - `backend/app/api/routes/reports.py`: user/creator/admin report creation endpoint.
 - `backend/app/api/routes/admin.py`: admin overview, dashboard, users, creators, services, bookings, reports, disputes, release/refund, and moderation actions.
@@ -326,7 +333,7 @@ Current SQLite and PostgreSQL schema targets include:
 - `backend/app/domain/__init__.py`: marks `domain` as a package.
 - `backend/app/domain/enums.py`: canonical enums for roles, statuses, fulfillment types, ledger entry types, report statuses, dispute statuses, and service moderation.
 - `backend/app/models/__init__.py`: marks `models` as a package.
-- `backend/app/models/entities.py`: Pydantic entity models for users, sessions, creators, services, slots, bookings, events, payments, held funds, ledger entries, messages, reports, and disputes.
+- `backend/app/models/entities.py`: Pydantic entity models for users, sessions, creators, services, slots, bookings, events, payments, payment provider events, held funds, ledger entries, messages, reports, and disputes.
 
 ### Schemas
 
@@ -342,14 +349,14 @@ Current SQLite and PostgreSQL schema targets include:
 - `backend/app/schemas/messages.py`: booking message request/response schemas.
 - `backend/app/schemas/meta.py`: metadata response schema.
 - `backend/app/schemas/moderation.py`: moderation rule create/update/response schemas.
-- `backend/app/schemas/payments.py`: payment intent, payment, held funds, ledger, and booking payment-state schemas.
+- `backend/app/schemas/payments.py`: payment intent, payment, provider event, held funds, ledger, and booking payment-state schemas.
 - `backend/app/schemas/reports.py`: report create/resolve/response schemas.
 - `backend/app/schemas/services.py`: service create/update/response schemas.
 
 ### Repository Layer
 
 - `backend/app/repositories/__init__.py`: marks `repositories` as a package.
-- `backend/app/repositories/sqlite.py`: SQLite repository that initializes schema, runs migrations, seeds development data, and implements all persistence operations for users, sessions, creators, services, slots, bookings, payments, held funds, ledger entries, messages, reports, and disputes.
+- `backend/app/repositories/sqlite.py`: SQLite repository that initializes schema, runs migrations, seeds development data, and implements all persistence operations for users, sessions, creators, services, slots, bookings, payments, provider events, held funds, ledger entries, messages, reports, and disputes.
 
 ### Service Layer
 
@@ -359,7 +366,8 @@ Current SQLite and PostgreSQL schema targets include:
 - `backend/app/services/creators.py`: creator profile upsert logic.
 - `backend/app/services/services.py`: creator service creation/update and availability slot creation logic.
 - `backend/app/services/bookings.py`: booking creation, accept/cancel/start/deliver/complete/dispute business rules.
-- `backend/app/services/payments.py`: simulated payment intent, payment success, held funds, ledger creation, admin release, and admin refund logic.
+- `backend/app/services/payment_providers.py`: internal payment provider interface plus simulated provider implementation.
+- `backend/app/services/payments.py`: provider-backed payment intent, simulated payment success, provider event processing, held funds, ledger creation, admin release, and admin refund logic.
 - `backend/app/services/messages.py`: booking participant/admin authorization and message creation.
 - `backend/app/services/moderation.py`: public listing compliance scanner using admin-managed rules.
 - `backend/app/services/reports.py`: report creation, risk scoring, and status resolution logic.
@@ -396,7 +404,7 @@ Current SQLite and PostgreSQL schema targets include:
 - `apps/marketplace/components/auth-panel.tsx`: client-side registration/login panel using local storage session persistence.
 - `apps/marketplace/components/session-status.tsx`: displays current marketplace session state and sign-out control.
 - `apps/marketplace/components/booking-form.tsx`: booking creation form for selected services/slots.
-- `apps/marketplace/components/payment-panel.tsx`: payment intent and simulated payment success UI plus held funds/ledger display.
+- `apps/marketplace/components/payment-panel.tsx`: payment intent and simulated payment success UI plus held funds, ledger, and provider-event display.
 - `apps/marketplace/components/booking-actions.tsx`: lifecycle action UI for start, deliver, completion confirmation, and dispute opening.
 - `apps/marketplace/components/booking-chat.tsx`: booking-scoped chat and report form.
 - `apps/marketplace/components/creator-dashboard.tsx`: creator profile editor, service creation, slot creation, service list, and booking management.
@@ -484,7 +492,7 @@ Known note: `pytest` is not currently installed in `.venv`, so backend verificat
 
 - Replace development auth with production-grade JWT access tokens, refresh token rotation, device/session revocation, and MFA for creators/admins.
 - Add real age verification and email/OTP verification.
-- Add payment provider abstraction, webhook verification, provider event storage, refunds table, payouts table, and chargeback handling.
+- Add real provider adapters, webhook signature verification, refunds table, payouts table, and chargeback handling.
 - Harden audit logs with request metadata, before/after snapshots, database-level immutability constraints, and full coverage for future admin actions.
 - Add prohibited-listing scanner and media moderation hooks.
 - Add creator verification, especially for in-person fulfillment.
