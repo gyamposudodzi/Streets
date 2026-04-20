@@ -9,6 +9,7 @@ import {
 } from "@streets/api-client";
 import type { AuthSession, BookingPaymentState, Payment } from "@streets/types";
 import { formatBookingStatus } from "./booking-status";
+import { MoneyStateCard } from "./money-state-card";
 
 const sessionStorageKey = "streets.session";
 
@@ -116,6 +117,7 @@ export function PaymentPanel({ bookingId, bookingStatus }: PaymentPanelProps) {
       {error ? <p className="errorText">{error}</p> : null}
 
       <div className="grid">
+        <MoneyStateCard paymentState={paymentState} />
         {paymentState?.payments.length ? (
           paymentState.payments.map((payment) => (
             <article key={payment.id} className="card">

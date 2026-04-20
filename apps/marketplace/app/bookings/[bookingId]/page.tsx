@@ -5,6 +5,9 @@ import { BookingActions } from "../../../components/booking-actions";
 import { BookingChat } from "../../../components/booking-chat";
 import { bookingNextStep, formatBookingStatus } from "../../../components/booking-status";
 import { PaymentPanel } from "../../../components/payment-panel";
+import { StatusPill } from "../../../components/status-pill";
+import { TimelineEventCard } from "../../../components/timeline-event-card";
+import { WorkflowStepper } from "../../../components/workflow-stepper";
 
 type BookingDetailPageProps = {
   params: Promise<{ bookingId: string }>;
@@ -36,6 +39,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
     <main className="page">
       <section className="hero">
         <p className="eyebrow">Booking</p>
+        <StatusPill status={booking.status} />
         <h1>{formatBookingStatus(booking.status)}</h1>
         <p>{bookingNextStep(booking.status)}</p>
         <p className="note">Booking ID: {booking.id}</p>
@@ -57,24 +61,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
       <section className="panel">
         <p className="eyebrow">Flow</p>
         <h2>How this booking moves</h2>
-        <div className="flowSteps">
-          <article className={booking.status === "pending_payment" ? "flowStep activeStep" : "flowStep"}>
-            <strong>1. Buyer pays</strong>
-            <span>Funds are held after payment succeeds.</span>
-          </article>
-          <article className={booking.status === "paid_pending_acceptance" ? "flowStep activeStep" : "flowStep"}>
-            <strong>2. Creator decides</strong>
-            <span>Creator accepts or declines the booking.</span>
-          </article>
-          <article className={["accepted", "in_progress", "awaiting_release"].includes(booking.status) ? "flowStep activeStep" : "flowStep"}>
-            <strong>3. Service happens</strong>
-            <span>Creator starts, delivers, and buyer can confirm.</span>
-          </article>
-          <article className={["delivered", "released", "refunded", "disputed"].includes(booking.status) ? "flowStep activeStep" : "flowStep"}>
-            <strong>4. Release or refund</strong>
-            <span>Admin handles held-funds release, refund, or dispute review.</span>
-          </article>
-        </div>
+        <WorkflowStepper status={booking.status} />
       </section>
       <PaymentPanel bookingId={booking.id} bookingStatus={booking.status} />
       <BookingActions booking={booking} />
@@ -85,11 +72,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
         <div className="stack">
           {events.length > 0 ? (
             events.map((event) => (
-              <article key={event.id} className="card">
-                <h3>{event.event_type}</h3>
-                <p>{event.detail}</p>
-                <p>{formatDate(event.created_at)}</p>
-              </article>
+              <TimelineEventCard key={event.id} event={event} />
             ))
           ) : (
             <article className="card">

@@ -35,24 +35,36 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
   return (
     <main className="page">
       <section className="panel">
-        <p className="eyebrow">Booking</p>
-        <h1>Create booking draft</h1>
-        <p>
-          This Phase 1 flow creates a booking directly against the backend API using the
-          active buyer session stored from the auth page.
+        <p className="eyebrow">Checkout</p>
+        <h1>Review your booking</h1>
+        <p className="note">
+          You will create the booking first, then pay upfront on the booking page.
+          Once payment succeeds, the creator can accept or decline. Declines refund the buyer.
         </p>
         <div className="grid">
           <article className="card">
+            <p className="badge">{service.fulfillment_type.replace("_", " ")}</p>
             <h3>{service.title}</h3>
             <p>{service.description}</p>
             <p>
               {service.fulfillment_type.replace("_", " ")} - {service.duration_minutes} min
             </p>
+            <p>{new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: service.currency
+            }).format(service.price / 100)}</p>
           </article>
           <article className="card">
             <h3>Selected slot</h3>
             <p>{selectedSlot ? selectedSlot.starts_at : "No fixed slot selected"}</p>
             <p>{selectedSlot ? selectedSlot.ends_at : "Creator can follow up later"}</p>
+          </article>
+          <article className="card">
+            <h3>What happens next</h3>
+            <p>1. Create booking.</p>
+            <p>2. Pay upfront.</p>
+            <p>3. Creator accepts or declines.</p>
+            <p>4. Held funds are released or refunded by platform rules.</p>
           </article>
         </div>
         <div className="formShell">

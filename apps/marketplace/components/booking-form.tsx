@@ -56,14 +56,13 @@ export function BookingForm({ serviceId, slotId }: BookingFormProps) {
           readOnly
         />
       </label>
-      <label className="stack">
-        <span>Service ID</span>
-        <input className="input" value={serviceId} readOnly />
-      </label>
-      <label className="stack">
-        <span>Slot ID</span>
-        <input className="input" value={slotId ?? "Flexible booking"} readOnly />
-      </label>
+      <div className="checkoutNotice">
+        <strong>Creator decision required</strong>
+        <span>
+          Creating this booking does not guarantee participation. The creator accepts
+          or declines after payment is held.
+        </span>
+      </div>
       {!session ? (
         <p className="errorText">
           No buyer session found. <Link href="/auth">Register or sign in here.</Link>
@@ -71,7 +70,7 @@ export function BookingForm({ serviceId, slotId }: BookingFormProps) {
       ) : null}
       {error ? <p className="errorText">{error}</p> : null}
       <button className="button" type="submit" disabled={isSubmitting || !session}>
-        {isSubmitting ? "Creating..." : "Create booking"}
+        {isSubmitting ? "Creating..." : "Create booking and continue"}
       </button>
     </form>
   );

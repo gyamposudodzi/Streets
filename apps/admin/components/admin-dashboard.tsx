@@ -27,6 +27,53 @@ import type {
 
 const sessionStorageKey = "streets.admin.session";
 
+type AdminSection =
+  | "overview"
+  | "services"
+  | "bookings"
+  | "reports"
+  | "disputes"
+  | "rules"
+  | "audit";
+
+const adminSections: Array<{ id: AdminSection; label: string; helper: string }> = [
+  {
+    id: "overview",
+    label: "Overview",
+    helper: "Users, creators, and platform totals"
+  },
+  {
+    id: "services",
+    label: "Services",
+    helper: "Listing review and public visibility"
+  },
+  {
+    id: "bookings",
+    label: "Bookings & payments",
+    helper: "Booking state, held funds, release, and refunds"
+  },
+  {
+    id: "reports",
+    label: "Reports",
+    helper: "Safety reports and review queue"
+  },
+  {
+    id: "disputes",
+    label: "Disputes",
+    helper: "Buyer and creator dispute decisions"
+  },
+  {
+    id: "rules",
+    label: "Wording rules",
+    helper: "Admin-controlled public listing scan rules"
+  },
+  {
+    id: "audit",
+    label: "Audit logs",
+    helper: "Immutable admin action history"
+  }
+];
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
@@ -54,6 +101,7 @@ export function AdminDashboard() {
   const [rulePattern, setRulePattern] = useState("");
   const [ruleLabel, setRuleLabel] = useState("");
   const [ruleAction, setRuleAction] = useState("hold");
+  const [activeSection, setActiveSection] = useState<AdminSection>("overview");
 
   useEffect(() => {
     setSession(readSession());
@@ -369,6 +417,26 @@ export function AdminDashboard() {
 
       {dashboard ? (
         <>
+          <nav className="dashboardSubnav" aria-label="Admin dashboard sections">
+            {adminSections.map((section) => (
+              <button
+                key={section.id}
+                className={
+                  activeSection === section.id
+                    ? "subnavButton activeSubnavButton"
+                    : "subnavButton"
+                }
+                type="button"
+                onClick={() => setActiveSection(section.id)}
+              >
+                <span>{section.label}</span>
+                <small>{section.helper}</small>
+              </button>
+            ))}
+          </nav>
+
+          {activeSection === "overview" ? (
+            <>
           <div className="grid">
             <article className="card">
               <h2>Users</h2>
@@ -417,7 +485,10 @@ export function AdminDashboard() {
               </div>
             ))}
           </section>
+            </>
+          ) : null}
 
+          {activeSection === "services" ? (
           <section className="card stack">
             <h2>Services</h2>
             {dashboard.services.map((service) => (
@@ -453,7 +524,9 @@ export function AdminDashboard() {
               </div>
             ))}
           </section>
+          ) : null}
 
+          {activeSection === "rules" ? (
           <section className="card stack">
             <h2>Public wording rules</h2>
             <p>
@@ -507,7 +580,9 @@ export function AdminDashboard() {
               </div>
             ))}
           </section>
+          ) : null}
 
+          {activeSection === "reports" ? (
           <section className="card stack">
             <h2>Reports</h2>
             {dashboard.reports.length > 0 ? (
@@ -561,7 +636,9 @@ export function AdminDashboard() {
               <p>No reports yet.</p>
             )}
           </section>
+          ) : null}
 
+          {activeSection === "disputes" ? (
           <section className="card stack">
             <h2>Disputes</h2>
             {dashboard.disputes.length > 0 ? (
@@ -598,7 +675,9 @@ export function AdminDashboard() {
               <p>No disputes yet.</p>
             )}
           </section>
+          ) : null}
 
+          {activeSection === "audit" ? (
           <section className="card stack">
             <h2>Recent audit logs</h2>
             {dashboard.audit_logs.length > 0 ? (
@@ -618,7 +697,9 @@ export function AdminDashboard() {
               <p>No admin actions have been logged yet.</p>
             )}
           </section>
+          ) : null}
 
+          {activeSection === "bookings" ? (
           <section className="card stack">
             <h2>Bookings</h2>
             {dashboard.bookings.length > 0 ? (
@@ -706,6 +787,7 @@ export function AdminDashboard() {
               <p>No bookings yet.</p>
             )}
           </section>
+          ) : null}
         </>
       ) : (
         <p>Loading dashboard...</p>

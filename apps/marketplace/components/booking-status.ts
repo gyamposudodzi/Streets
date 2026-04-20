@@ -38,3 +38,16 @@ export function bookingNextStep(status: BookingStatus | string) {
 
   return copy[status] ?? "Follow the booking timeline for the latest action.";
 }
+
+export function bookingStatusTone(status: BookingStatus | string) {
+  if (["released", "delivered"].includes(status)) {
+    return "success";
+  }
+  if (["pending_payment", "paid_pending_acceptance", "awaiting_release"].includes(status)) {
+    return "warning";
+  }
+  if (["disputed", "refunded", "declined", "cancelled"].includes(status)) {
+    return "danger";
+  }
+  return "brand";
+}

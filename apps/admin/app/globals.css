@@ -132,6 +132,64 @@ p {
   border: 1px solid var(--color-border);
 }
 
+.dashboardSubnav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.7rem;
+  padding: 0.75rem;
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(135deg, rgba(247, 241, 236, 0.07), rgba(122, 22, 50, 0.1)),
+    rgba(5, 5, 5, 0.62);
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 1px 0 rgba(247, 241, 236, 0.08);
+}
+
+.subnavButton {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 4.8rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 1rem;
+  border: 1px solid transparent;
+  background: rgba(247, 241, 236, 0.05);
+  color: var(--color-off-white);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.subnavButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(247, 241, 236, 0.18);
+  background: rgba(247, 241, 236, 0.08);
+}
+
+.subnavButton span {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.subnavButton small {
+  color: var(--color-muted);
+  line-height: 1.35;
+}
+
+.activeSubnavButton {
+  border-color: rgba(240, 184, 200, 0.42);
+  background:
+    linear-gradient(135deg, rgba(122, 22, 50, 0.95), rgba(75, 13, 32, 0.84)),
+    var(--color-grape-red);
+  box-shadow: 0 16px 34px rgba(122, 22, 50, 0.32);
+}
+
+.activeSubnavButton small {
+  color: rgba(247, 241, 236, 0.78);
+}
+
 .row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

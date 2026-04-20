@@ -168,6 +168,76 @@ a {
   box-shadow: 0 12px 30px rgba(122, 22, 50, 0.16);
 }
 
+.successPill {
+  background: rgba(47, 143, 91, 0.12);
+  color: var(--color-success);
+}
+
+.warningPill {
+  background: rgba(199, 138, 37, 0.14);
+  color: #8a5a0d;
+}
+
+.dangerPill {
+  background: rgba(179, 38, 58, 0.12);
+  color: var(--color-danger);
+}
+
+.moneyCard {
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  color: var(--color-off-white);
+  background:
+    radial-gradient(circle at top right, rgba(122, 22, 50, 0.55), transparent 12rem),
+    linear-gradient(135deg, var(--color-black), var(--color-deep-grape));
+  box-shadow: 0 18px 40px rgba(5, 5, 5, 0.16);
+}
+
+.moneyCard h3 {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  letter-spacing: -0.04em;
+}
+
+.moneySplit {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  color: rgba(247, 241, 236, 0.76);
+}
+
+.timelineEvent {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1.1rem;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--color-border);
+}
+
+.timelineDot {
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  background: var(--color-grape-red);
+  box-shadow: 0 0 0 0.4rem rgba(122, 22, 50, 0.12);
+}
+
+.checkoutNotice {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(122, 22, 50, 0.08);
+  border: 1px solid rgba(122, 22, 50, 0.18);
+}
+
+.checkoutNotice span {
+  color: var(--color-muted);
+}
+
 .panelHeader {
   display: flex;
   align-items: flex-end;
