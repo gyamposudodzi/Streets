@@ -1,8 +1,21 @@
 :root {
   color-scheme: light;
-  font-family: "Segoe UI", sans-serif;
-  background: #f5f0e8;
-  color: #1f1a17;
+  --color-grape-red: #7a1632;
+  --color-deep-grape: #4b0d20;
+  --color-black: #050505;
+  --color-soft-black: #121111;
+  --color-off-white: #f7f1ec;
+  --color-paper: #fffaf7;
+  --color-muted: #776970;
+  --color-border: rgba(75, 13, 32, 0.16);
+  --color-success: #2f8f5b;
+  --color-warning: #c78a25;
+  --color-danger: #b3263a;
+  --shadow-soft: 0 24px 70px rgba(5, 5, 5, 0.12);
+  --shadow-card: 0 18px 45px rgba(75, 13, 32, 0.1);
+  font-family: "Aptos", "Sora", "Inter Tight", sans-serif;
+  background: var(--color-black);
+  color: var(--color-soft-black);
 }
 
 * {
@@ -21,24 +34,55 @@ a {
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 1rem 2rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background: rgba(5, 5, 5, 0.9);
+  border-bottom: 1px solid rgba(247, 241, 236, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-off-white);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.brandDot {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  background: var(--color-grape-red);
+  box-shadow: 0 0 0 0.45rem rgba(122, 22, 50, 0.24);
 }
 
 .page {
   min-height: 100vh;
   padding: 2rem;
   background:
-    radial-gradient(circle at top, rgba(199, 125, 62, 0.22), transparent 35%),
-    linear-gradient(180deg, #f9f4ec 0%, #efe4d2 100%);
+    radial-gradient(circle at 12% 8%, rgba(122, 22, 50, 0.35), transparent 32rem),
+    radial-gradient(circle at 88% 12%, rgba(75, 13, 32, 0.34), transparent 28rem),
+    linear-gradient(180deg, #111 0%, #1d1519 38%, #f7f1ec 38%, #efe5e1 100%);
 }
 
 .hero {
   max-width: 72rem;
   margin: 0 auto 2rem;
-  padding: 2.5rem;
-  border-radius: 1.5rem;
-  background: rgba(255, 251, 245, 0.9);
-  box-shadow: 0 20px 50px rgba(76, 44, 20, 0.12);
+  padding: clamp(2rem, 5vw, 4rem);
+  border-radius: 2rem;
+  color: var(--color-off-white);
+  background:
+    linear-gradient(135deg, rgba(122, 22, 50, 0.85), rgba(5, 5, 5, 0.96)),
+    var(--color-black);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(247, 241, 236, 0.12);
 }
 
 .panel {
@@ -46,8 +90,9 @@ a {
   margin: 0 auto 2rem;
   padding: 2rem;
   border-radius: 1.5rem;
-  background: rgba(255, 251, 245, 0.88);
-  box-shadow: 0 16px 40px rgba(76, 44, 20, 0.1);
+  background: rgba(255, 250, 247, 0.94);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
 }
 
 .grid {
@@ -58,10 +103,11 @@ a {
 }
 
 .card {
-  padding: 1rem;
-  border-radius: 1rem;
-  background: rgba(255, 248, 239, 0.95);
-  border: 1px solid rgba(143, 90, 50, 0.12);
+  padding: 1.1rem;
+  border-radius: 1.15rem;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 12px 30px rgba(5, 5, 5, 0.06);
 }
 
 .stack {
@@ -75,7 +121,8 @@ a {
   gap: 0.75rem;
 }
 
-.stats {
+.stats,
+.flowSteps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
   gap: 1rem;
@@ -83,17 +130,27 @@ a {
 }
 
 .flowSteps {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  gap: 1rem;
   margin-top: 1rem;
 }
 
+.stat,
 .flowStep {
   padding: 1rem;
-  border-radius: 1rem;
-  background: rgba(255, 248, 239, 0.82);
-  border: 1px solid rgba(143, 90, 50, 0.12);
+  border-radius: 1.1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--color-border);
+  color: var(--color-soft-black);
+}
+
+.hero .stat {
+  background: rgba(247, 241, 236, 0.11);
+  border-color: rgba(247, 241, 236, 0.16);
+  color: var(--color-off-white);
+}
+
+.stat strong {
+  display: block;
+  font-size: 1.7rem;
 }
 
 .flowStep strong,
@@ -103,24 +160,12 @@ a {
 
 .flowStep span {
   margin-top: 0.35rem;
-  color: #7b624d;
+  color: var(--color-muted);
 }
 
 .activeStep {
-  border-color: rgba(124, 77, 40, 0.55);
-  box-shadow: 0 10px 24px rgba(124, 77, 40, 0.12);
-}
-
-.stat {
-  padding: 1rem;
-  border-radius: 1rem;
-  background: rgba(255, 245, 231, 0.95);
-  border: 1px solid rgba(143, 90, 50, 0.12);
-}
-
-.stat strong {
-  display: block;
-  font-size: 1.8rem;
+  border-color: rgba(122, 22, 50, 0.5);
+  box-shadow: 0 12px 30px rgba(122, 22, 50, 0.16);
 }
 
 .panelHeader {
@@ -131,19 +176,29 @@ a {
 }
 
 .note {
-  max-width: 20rem;
-  color: #7b624d;
+  max-width: 32rem;
+  color: var(--color-muted);
 }
 
-.badge {
-  display: inline-block;
+.hero .note,
+.hero .eyebrow {
+  color: rgba(247, 241, 236, 0.78);
+}
+
+.badge,
+.statusPill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.35rem;
   margin: 0 0 0.75rem;
-  padding: 0.3rem 0.65rem;
+  padding: 0.34rem 0.72rem;
   border-radius: 999px;
-  background: #f4ddc2;
-  color: #70461f;
+  background: rgba(122, 22, 50, 0.1);
+  color: var(--color-grape-red);
   text-transform: capitalize;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .filters {
@@ -155,11 +210,12 @@ a {
 
 .input {
   width: 100%;
-  padding: 0.85rem 1rem;
-  border-radius: 0.9rem;
-  border: 1px solid rgba(143, 90, 50, 0.22);
-  background: rgba(255, 253, 249, 0.98);
+  padding: 0.9rem 1rem;
+  border-radius: 0.95rem;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.96);
   color: inherit;
+  outline-color: var(--color-grape-red);
 }
 
 .textarea {
@@ -181,59 +237,66 @@ a {
   justify-content: center;
   text-decoration: none;
   cursor: pointer;
+  font-weight: 800;
 }
 
 .button,
 .buttonLink {
-  padding: 0.85rem 1.1rem;
+  padding: 0.9rem 1.15rem;
   border: none;
-  border-radius: 0.9rem;
-  background: #7c4d28;
-  color: #fffaf4;
+  border-radius: 0.95rem;
+  background: var(--color-grape-red);
+  color: var(--color-off-white);
+  box-shadow: 0 12px 24px rgba(122, 22, 50, 0.22);
 }
 
 .secondaryButton {
-  background: #b48057;
+  background: var(--color-black);
+  color: var(--color-off-white);
+  box-shadow: 0 12px 24px rgba(5, 5, 5, 0.16);
 }
 
 .inlineLink {
   margin-top: 0.5rem;
-  color: #7c4d28;
-  font-weight: 600;
+  color: var(--color-grape-red);
 }
 
 .sessionStatus {
   display: inline-flex;
   gap: 1rem;
   align-items: center;
-  padding: 0.8rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 999px;
-  background: rgba(255, 251, 245, 0.92);
-  box-shadow: 0 12px 30px rgba(76, 44, 20, 0.08);
+  color: var(--color-off-white);
+  background: rgba(247, 241, 236, 0.08);
+  border: 1px solid rgba(247, 241, 236, 0.12);
 }
 
 .formShell {
   margin-top: 1.5rem;
   padding: 1.25rem;
-  border-radius: 1rem;
-  background: rgba(255, 247, 235, 0.9);
-  border: 1px solid rgba(143, 90, 50, 0.12);
+  border-radius: 1.1rem;
+  background: rgba(122, 22, 50, 0.05);
+  border: 1px solid var(--color-border);
 }
 
 .errorText {
-  color: #a22718;
+  color: var(--color-danger);
 }
 
 .eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.8rem;
-  color: #8f5a32;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  color: var(--color-grape-red);
+  font-weight: 800;
 }
 
 h1 {
   margin: 0 0 1rem;
-  font-size: clamp(2rem, 6vw, 4rem);
+  font-size: clamp(2.3rem, 7vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: -0.055em;
 }
 
 p {
@@ -242,7 +305,8 @@ p {
 
 h2 {
   margin-top: 0;
-  font-size: 1rem;
+  font-size: clamp(1.15rem, 3vw, 1.7rem);
+  letter-spacing: -0.025em;
 }
 
 h3 {
@@ -250,11 +314,18 @@ h3 {
 }
 
 @media (max-width: 700px) {
-  .filters {
+  .topbar,
+  .page {
+    padding: 1rem;
+  }
+
+  .filters,
+  .twoCol {
     grid-template-columns: 1fr;
   }
 
-  .twoCol {
-    grid-template-columns: 1fr;
+  .panelHeader {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

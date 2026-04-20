@@ -13,6 +13,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <header className="topbar">
+          <a className="brandMark" href="/">
+            <span className="brandDot" />
+            Streets
+          </a>
           <SessionStatus />
         </header>
         {children}

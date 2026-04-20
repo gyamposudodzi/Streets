@@ -1,8 +1,20 @@
 :root {
-  color-scheme: light;
-  font-family: "Segoe UI", sans-serif;
-  background: #eef3ef;
-  color: #162019;
+  color-scheme: dark;
+  --color-grape-red: #7a1632;
+  --color-deep-grape: #4b0d20;
+  --color-black: #050505;
+  --color-soft-black: #121111;
+  --color-off-white: #f7f1ec;
+  --color-surface: #171416;
+  --color-surface-strong: #21191d;
+  --color-border: rgba(247, 241, 236, 0.1);
+  --color-muted: #b7aab0;
+  --color-success: #2f8f5b;
+  --color-warning: #c78a25;
+  --color-danger: #b3263a;
+  font-family: "Aptos", "Sora", "Inter Tight", sans-serif;
+  background: var(--color-black);
+  color: var(--color-off-white);
 }
 
 * {
@@ -17,20 +29,38 @@ body {
   min-height: 100vh;
   padding: 2rem;
   background:
-    linear-gradient(135deg, rgba(93, 140, 106, 0.18), transparent 40%),
-    linear-gradient(180deg, #f5faf6 0%, #e7efe9 100%);
+    radial-gradient(circle at 10% 0%, rgba(122, 22, 50, 0.32), transparent 30rem),
+    radial-gradient(circle at 90% 0%, rgba(75, 13, 32, 0.35), transparent 28rem),
+    linear-gradient(180deg, #050505 0%, #121111 100%);
 }
 
 .hero {
-  max-width: 70rem;
+  max-width: 78rem;
   margin: 0 auto;
 }
 
 .eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.8rem;
-  color: #41684a;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  color: #f0b8c8;
+  font-weight: 800;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 4.7rem);
+  line-height: 0.95;
+  letter-spacing: -0.055em;
+}
+
+h2 {
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+p {
+  line-height: 1.6;
 }
 
 .grid {
@@ -41,9 +71,10 @@ body {
 
 .card {
   padding: 1rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.75);
-  box-shadow: 0 12px 30px rgba(32, 64, 44, 0.1);
+  border-radius: 1.15rem;
+  background: rgba(23, 20, 22, 0.84);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
 }
 
 .stack {
@@ -53,10 +84,16 @@ body {
 
 .input {
   width: 100%;
-  padding: 0.85rem 1rem;
-  border-radius: 0.9rem;
-  border: 1px solid rgba(65, 104, 74, 0.2);
-  background: rgba(255, 255, 255, 0.96);
+  padding: 0.9rem 1rem;
+  border-radius: 0.95rem;
+  border: 1px solid var(--color-border);
+  background: rgba(247, 241, 236, 0.08);
+  color: var(--color-off-white);
+  outline-color: var(--color-grape-red);
+}
+
+.input::placeholder {
+  color: rgba(247, 241, 236, 0.48);
 }
 
 .actions {
@@ -66,16 +103,20 @@ body {
 }
 
 .button {
-  padding: 0.85rem 1.1rem;
+  padding: 0.9rem 1.1rem;
   border: none;
-  border-radius: 0.9rem;
-  background: #41684a;
-  color: #f6fbf7;
+  border-radius: 0.95rem;
+  background: var(--color-grape-red);
+  color: var(--color-off-white);
   cursor: pointer;
+  font-weight: 800;
+  box-shadow: 0 12px 24px rgba(122, 22, 50, 0.28);
 }
 
 .secondaryButton {
-  background: #789580;
+  background: rgba(247, 241, 236, 0.12);
+  border: 1px solid var(--color-border);
+  box-shadow: none;
 }
 
 .panelHeader {
@@ -83,6 +124,12 @@ body {
   justify-content: space-between;
   align-items: flex-end;
   gap: 1rem;
+  padding: 1.35rem;
+  border-radius: 1.4rem;
+  background:
+    linear-gradient(135deg, rgba(122, 22, 50, 0.32), rgba(247, 241, 236, 0.05)),
+    var(--color-surface);
+  border: 1px solid var(--color-border);
 }
 
 .row {
@@ -90,20 +137,36 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   padding: 0.75rem 0;
-  border-top: 1px solid rgba(32, 64, 44, 0.08);
+  border-top: 1px solid var(--color-border);
 }
 
 .bookingRow {
-  padding: 0.75rem 0;
-  border-top: 1px solid rgba(32, 64, 44, 0.08);
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--color-border);
 }
 
 .paymentState {
   padding: 1rem;
-  border-radius: 0.9rem;
-  background: rgba(246, 251, 247, 0.78);
+  border-radius: 0.95rem;
+  background: rgba(247, 241, 236, 0.06);
+  border: 1px solid var(--color-border);
 }
 
 .errorText {
-  color: #a22718;
+  color: #ff9aaa;
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .panelHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
 }
