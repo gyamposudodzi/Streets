@@ -11,7 +11,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         <header className="topbar">
           <a className="brandMark" href="/">
             <span className="brandDot" />

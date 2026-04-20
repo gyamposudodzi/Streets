@@ -37,6 +37,31 @@ const emptyService = {
   fulfillment_type: "video"
 };
 
+type CreatorSection = "profile" | "services" | "availability" | "bookings";
+
+const creatorSections: Array<{ id: CreatorSection; label: string; helper: string }> = [
+  {
+    id: "profile",
+    label: "Profile",
+    helper: "Public identity and service region"
+  },
+  {
+    id: "services",
+    label: "Services",
+    helper: "Create and manage bookable offers"
+  },
+  {
+    id: "availability",
+    label: "Availability",
+    helper: "Publish time slots for booking"
+  },
+  {
+    id: "bookings",
+    label: "Bookings",
+    helper: "Accept, decline, or cancel requests"
+  }
+];
+
 export function CreatorDashboard() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [profile, setProfile] = useState(emptyProfile);
@@ -48,6 +73,7 @@ export function CreatorDashboard() {
   const [serviceForm, setServiceForm] = useState(emptyService);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [activeSection, setActiveSection] = useState<CreatorSection>("profile");
 
   useEffect(() => {
     const raw = window.localStorage.getItem(sessionStorageKey);
@@ -297,206 +323,247 @@ export function CreatorDashboard() {
       {message ? <p>{message}</p> : null}
       {error ? <p className="errorText">{error}</p> : null}
 
-      <form className="card stack" onSubmit={handleProfileSubmit}>
-        <h3>Profile</h3>
-        <input
-          className="input"
-          placeholder="Display name"
-          value={profile.display_name}
-          onChange={(event) => setProfile({ ...profile, display_name: event.target.value })}
-        />
-        <textarea
-          className="input textarea"
-          placeholder="Bio"
-          value={profile.bio}
-          onChange={(event) => setProfile({ ...profile, bio: event.target.value })}
-        />
-        <div className="twoCol">
-          <input
-            className="input"
-            placeholder="Country"
-            value={profile.country}
-            onChange={(event) => setProfile({ ...profile, country: event.target.value })}
-          />
-          <input
-            className="input"
-            placeholder="Service region"
-            value={profile.service_region}
-            onChange={(event) => setProfile({ ...profile, service_region: event.target.value })}
-          />
-        </div>
-        <button className="button" type="submit">
-          Save profile
-        </button>
-      </form>
+      <nav className="workspaceSubnav" aria-label="Creator dashboard sections">
+        {creatorSections.map((section) => (
+          <button
+            key={section.id}
+            className={
+              activeSection === section.id
+                ? "workspaceSubnavButton activeWorkspaceSubnavButton"
+                : "workspaceSubnavButton"
+            }
+            type="button"
+            onClick={() => setActiveSection(section.id)}
+          >
+            <span>{section.label}</span>
+            <small>{section.helper}</small>
+          </button>
+        ))}
+      </nav>
 
-      <form className="card stack" onSubmit={handleServiceSubmit}>
-        <h3>Create service</h3>
-        <input
-          className="input"
-          placeholder="Title"
-          value={serviceForm.title}
-          onChange={(event) => setServiceForm({ ...serviceForm, title: event.target.value })}
-        />
-        <textarea
-          className="input textarea"
-          placeholder="Description"
-          value={serviceForm.description}
-          onChange={(event) => setServiceForm({ ...serviceForm, description: event.target.value })}
-        />
-        <div className="twoCol">
+      {activeSection === "profile" ? (
+        <form className="card stack" onSubmit={handleProfileSubmit}>
+          <h3>Profile</h3>
           <input
             className="input"
-            placeholder="Category"
-            value={serviceForm.category}
-            onChange={(event) => setServiceForm({ ...serviceForm, category: event.target.value })}
+            placeholder="Display name"
+            value={profile.display_name}
+            onChange={(event) => setProfile({ ...profile, display_name: event.target.value })}
           />
+          <textarea
+            className="input textarea"
+            placeholder="Bio"
+            value={profile.bio}
+            onChange={(event) => setProfile({ ...profile, bio: event.target.value })}
+          />
+          <div className="twoCol">
+            <input
+              className="input"
+              placeholder="Country"
+              value={profile.country}
+              onChange={(event) => setProfile({ ...profile, country: event.target.value })}
+            />
+            <input
+              className="input"
+              placeholder="Service region"
+              value={profile.service_region}
+              onChange={(event) => setProfile({ ...profile, service_region: event.target.value })}
+            />
+          </div>
+          <button className="button" type="submit">
+            Save profile
+          </button>
+        </form>
+      ) : null}
+
+      {activeSection === "services" ? (
+        <>
+          <form className="card stack" onSubmit={handleServiceSubmit}>
+            <h3>Create service</h3>
+            <input
+              className="input"
+              placeholder="Title"
+              value={serviceForm.title}
+              onChange={(event) => setServiceForm({ ...serviceForm, title: event.target.value })}
+            />
+            <textarea
+              className="input textarea"
+              placeholder="Description"
+              value={serviceForm.description}
+              onChange={(event) =>
+                setServiceForm({ ...serviceForm, description: event.target.value })
+              }
+            />
+            <div className="twoCol">
+              <input
+                className="input"
+                placeholder="Category"
+                value={serviceForm.category}
+                onChange={(event) =>
+                  setServiceForm({ ...serviceForm, category: event.target.value })
+                }
+              />
+              <select
+                className="input"
+                value={serviceForm.fulfillment_type}
+                onChange={(event) =>
+                  setServiceForm({ ...serviceForm, fulfillment_type: event.target.value })
+                }
+              >
+                <option value="video">Video</option>
+                <option value="audio_call">Audio call</option>
+                <option value="chat">Chat</option>
+                <option value="custom_request">Custom request</option>
+                <option value="in_person">In person</option>
+              </select>
+            </div>
+            <div className="twoCol">
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={serviceForm.duration_minutes}
+                onChange={(event) =>
+                  setServiceForm({ ...serviceForm, duration_minutes: Number(event.target.value) })
+                }
+              />
+              <input
+                className="input"
+                type="number"
+                min="100"
+                step="100"
+                value={serviceForm.price}
+                onChange={(event) =>
+                  setServiceForm({ ...serviceForm, price: Number(event.target.value) })
+                }
+              />
+            </div>
+            <button className="button" type="submit">
+              Create service
+            </button>
+          </form>
+
+          <div className="grid">
+            {services.map((service) => (
+              <article key={service.id} className="card">
+                <p className="badge">{service.fulfillment_type.replace("_", " ")}</p>
+                <h3>{service.title}</h3>
+                <p>{service.description}</p>
+                <p>
+                  {service.category} - {service.duration_minutes} min
+                </p>
+                <p>{service.price} cents</p>
+                <p>{service.is_active ? "Active" : "Inactive"}</p>
+                <p>
+                  Listing: {service.moderation_status === "approved" ? "Public" : "Held for review"}
+                </p>
+                {service.compliance_score > 0 ? (
+                  <p>Admin note: {service.compliance_notes}</p>
+                ) : null}
+                <button
+                  className="button secondaryButton"
+                  type="button"
+                  onClick={() => handleToggleService(service)}
+                >
+                  {service.is_active ? "Deactivate" : "Activate"}
+                </button>
+              </article>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {activeSection === "availability" ? (
+        <form className="card stack" onSubmit={handleSlotSubmit}>
+          <h3>Publish slot</h3>
           <select
             className="input"
-            value={serviceForm.fulfillment_type}
-            onChange={(event) =>
-              setServiceForm({ ...serviceForm, fulfillment_type: event.target.value })
-            }
+            value={slotServiceId}
+            onChange={(event) => setSlotServiceId(event.target.value)}
           >
-            <option value="video">Video</option>
-            <option value="audio_call">Audio call</option>
-            <option value="chat">Chat</option>
-            <option value="custom_request">Custom request</option>
-            <option value="in_person">In person</option>
+            <option value="">Select service</option>
+            {services.map((service) => (
+              <option key={service.id} value={service.id}>
+                {service.title}
+              </option>
+            ))}
           </select>
-        </div>
-        <div className="twoCol">
-          <input
-            className="input"
-            type="number"
-            min="1"
-            value={serviceForm.duration_minutes}
-            onChange={(event) =>
-              setServiceForm({ ...serviceForm, duration_minutes: Number(event.target.value) })
-            }
-          />
-          <input
-            className="input"
-            type="number"
-            min="100"
-            step="100"
-            value={serviceForm.price}
-            onChange={(event) =>
-              setServiceForm({ ...serviceForm, price: Number(event.target.value) })
-            }
-          />
-        </div>
-        <button className="button" type="submit">
-          Create service
-        </button>
-      </form>
+          <div className="twoCol">
+            <input
+              className="input"
+              type="datetime-local"
+              value={slotStart}
+              onChange={(event) => setSlotStart(event.target.value)}
+            />
+            <input
+              className="input"
+              type="datetime-local"
+              value={slotEnd}
+              onChange={(event) => setSlotEnd(event.target.value)}
+            />
+          </div>
+          <button
+            className="button"
+            type="submit"
+            disabled={!slotServiceId || !slotStart || !slotEnd}
+          >
+            Publish slot
+          </button>
+        </form>
+      ) : null}
 
-      <form className="card stack" onSubmit={handleSlotSubmit}>
-        <h3>Publish slot</h3>
-        <select
-          className="input"
-          value={slotServiceId}
-          onChange={(event) => setSlotServiceId(event.target.value)}
-        >
-          <option value="">Select service</option>
-          {services.map((service) => (
-            <option key={service.id} value={service.id}>
-              {service.title}
-            </option>
-          ))}
-        </select>
-        <div className="twoCol">
-          <input
-            className="input"
-            type="datetime-local"
-            value={slotStart}
-            onChange={(event) => setSlotStart(event.target.value)}
-          />
-          <input
-            className="input"
-            type="datetime-local"
-            value={slotEnd}
-            onChange={(event) => setSlotEnd(event.target.value)}
-          />
-        </div>
-        <button className="button" type="submit" disabled={!slotServiceId || !slotStart || !slotEnd}>
-          Publish slot
-        </button>
-      </form>
-
-      <div className="grid">
-        {services.map((service) => (
-          <article key={service.id} className="card">
-            <p className="badge">{service.fulfillment_type.replace("_", " ")}</p>
-            <h3>{service.title}</h3>
-            <p>{service.description}</p>
-            <p>
-              {service.category} - {service.duration_minutes} min
-            </p>
-            <p>{service.price} cents</p>
-            <p>{service.is_active ? "Active" : "Inactive"}</p>
-            <p>
-              Listing: {service.moderation_status === "approved" ? "Public" : "Held for review"}
-            </p>
-            {service.compliance_score > 0 ? (
-              <p>Admin note: {service.compliance_notes}</p>
-            ) : null}
-            <button className="button secondaryButton" type="button" onClick={() => handleToggleService(service)}>
-              {service.is_active ? "Deactivate" : "Activate"}
-            </button>
-          </article>
-        ))}
-      </div>
-
-      <section className="card stack">
-        <h3>Booking requests</h3>
-        <p>
-          Paid bookings wait for your decision. Accept to start fulfillment, or decline
-          to refund the buyer automatically.
-        </p>
-        {bookings.length > 0 ? (
-          bookings.map((booking) => (
-            <article key={booking.id} className="card stack">
-              <p>{booking.id}</p>
-              <p>
-                {booking.fulfillment_type.replace("_", " ")} - {formatBookingStatus(booking.status)}
-              </p>
-              <p>{booking.scheduled_start ?? "Flexible schedule"}</p>
-              <div className="actions">
-                {booking.status === "paid_pending_acceptance" ? (
-                  <>
-                    <button
-                      className="button"
-                      type="button"
-                      onClick={() => handleAcceptBooking(booking.id)}
-                    >
-                      Accept
-                    </button>
+      {activeSection === "bookings" ? (
+        <section className="card stack">
+          <h3>Booking requests</h3>
+          <p>
+            Paid bookings wait for your decision. Accept to start fulfillment, or decline
+            to refund the buyer automatically.
+          </p>
+          {bookings.length > 0 ? (
+            bookings.map((booking) => (
+              <article key={booking.id} className="card stack">
+                <p>{booking.id}</p>
+                <p>
+                  {booking.fulfillment_type.replace("_", " ")} -{" "}
+                  {formatBookingStatus(booking.status)}
+                </p>
+                <p>{booking.scheduled_start ?? "Flexible schedule"}</p>
+                <div className="actions">
+                  {booking.status === "paid_pending_acceptance" ? (
+                    <>
+                      <button
+                        className="button"
+                        type="button"
+                        onClick={() => handleAcceptBooking(booking.id)}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        className="button secondaryButton"
+                        type="button"
+                        onClick={() => handleDeclineBooking(booking.id)}
+                      >
+                        Decline
+                      </button>
+                    </>
+                  ) : null}
+                  {!["cancelled", "declined", "released", "refunded"].includes(booking.status) ? (
                     <button
                       className="button secondaryButton"
                       type="button"
-                      onClick={() => handleDeclineBooking(booking.id)}
+                      onClick={() => handleCancelBooking(booking.id)}
                     >
-                      Decline
+                      Cancel
                     </button>
-                  </>
-                ) : null}
-                {!["cancelled", "declined", "released", "refunded"].includes(booking.status) ? (
-                  <button
-                    className="button secondaryButton"
-                    type="button"
-                    onClick={() => handleCancelBooking(booking.id)}
-                  >
-                    Cancel
-                  </button>
-                ) : null}
-              </div>
-            </article>
-          ))
-        ) : (
-          <p>No bookings yet.</p>
-        )}
-      </section>
+                  ) : null}
+                </div>
+              </article>
+            ))
+          ) : (
+            <p>No bookings yet.</p>
+          )}
+        </section>
+      ) : null}
     </section>
   );
 }

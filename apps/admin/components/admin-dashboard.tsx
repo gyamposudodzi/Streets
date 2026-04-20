@@ -36,6 +36,8 @@ type AdminSection =
   | "rules"
   | "audit";
 
+type IdentitySection = "users" | "creators";
+
 const adminSections: Array<{ id: AdminSection; label: string; helper: string }> = [
   {
     id: "overview",
@@ -74,6 +76,19 @@ const adminSections: Array<{ id: AdminSection; label: string; helper: string }> 
   }
 ];
 
+const identitySections: Array<{ id: IdentitySection; label: string; helper: string }> = [
+  {
+    id: "users",
+    label: "Users",
+    helper: "Buyer, creator, and admin accounts"
+  },
+  {
+    id: "creators",
+    label: "Creators",
+    helper: "Creator profiles and verification status"
+  }
+];
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
@@ -102,6 +117,7 @@ export function AdminDashboard() {
   const [ruleLabel, setRuleLabel] = useState("");
   const [ruleAction, setRuleAction] = useState("hold");
   const [activeSection, setActiveSection] = useState<AdminSection>("overview");
+  const [activeIdentitySection, setActiveIdentitySection] = useState<IdentitySection>("users");
 
   useEffect(() => {
     setSession(readSession());
@@ -437,54 +453,87 @@ export function AdminDashboard() {
 
           {activeSection === "overview" ? (
             <>
-          <div className="grid">
-            <article className="card">
-              <h2>Users</h2>
-              <p>{dashboard.overview.total_users}</p>
-            </article>
-            <article className="card">
-              <h2>Creators</h2>
-              <p>{dashboard.overview.total_creators}</p>
-            </article>
-            <article className="card">
-              <h2>Services</h2>
-              <p>{dashboard.overview.total_services}</p>
-            </article>
-            <article className="card">
-              <h2>Bookings</h2>
-              <p>{dashboard.overview.total_bookings}</p>
-            </article>
-            <article className="card">
-              <h2>Open reports</h2>
-              <p>{dashboard.overview.open_reports}</p>
-            </article>
-            <article className="card">
-              <h2>Open disputes</h2>
-              <p>{dashboard.overview.open_disputes}</p>
-            </article>
-          </div>
-
-          <section className="card stack">
-            <h2>Users</h2>
-            {dashboard.users.map((user) => (
-              <div key={user.id} className="row">
-                <span>{user.email}</span>
-                <span>{user.role}</span>
-                <span>{user.status}</span>
+              <div className="grid">
+                <article className="card">
+                  <h2>Users</h2>
+                  <p>{dashboard.overview.total_users}</p>
+                </article>
+                <article className="card">
+                  <h2>Creators</h2>
+                  <p>{dashboard.overview.total_creators}</p>
+                </article>
+                <article className="card">
+                  <h2>Services</h2>
+                  <p>{dashboard.overview.total_services}</p>
+                </article>
+                <article className="card">
+                  <h2>Bookings</h2>
+                  <p>{dashboard.overview.total_bookings}</p>
+                </article>
+                <article className="card">
+                  <h2>Open reports</h2>
+                  <p>{dashboard.overview.open_reports}</p>
+                </article>
+                <article className="card">
+                  <h2>Open disputes</h2>
+                  <p>{dashboard.overview.open_disputes}</p>
+                </article>
               </div>
-            ))}
-          </section>
 
-          <section className="card stack">
-            <h2>Creators</h2>
-            {dashboard.creators.map((creator) => (
-              <div key={creator.user_id} className="row">
-                <span>{creator.display_name}</span>
-                <span>{creator.service_region}</span>
-                <span>{creator.verification_status}</span>
-              </div>
-            ))}
-          </section>
+              <section className="card stack">
+                <div className="panelHeader compactPanelHeader">
+                  <div>
+                    <p className="eyebrow">Identity</p>
+                    <h2>People directory</h2>
+                  </div>
+                  <div className="sectionCount">
+                    {dashboard.users.length} users / {dashboard.creators.length} creators
+                  </div>
+                </div>
+                <nav className="miniSubnav" aria-label="Identity sections">
+                  {identitySections.map((section) => (
+                    <button
+                      key={section.id}
+                      className={
+                        activeIdentitySection === section.id
+                          ? "miniSubnavButton activeMiniSubnavButton"
+                          : "miniSubnavButton"
+                      }
+                      type="button"
+                      onClick={() => setActiveIdentitySection(section.id)}
+                    >
+                      <span>{section.label}</span>
+                      <small>{section.helper}</small>
+                    </button>
+                  ))}
+                </nav>
+
+                {activeIdentitySection === "users" ? (
+                  <div className="stack">
+                    <h2>Users</h2>
+                    {dashboard.users.map((user) => (
+                      <div key={user.id} className="row">
+                        <span>{user.email}</span>
+                        <span>{user.role}</span>
+                        <span>{user.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {activeIdentitySection === "creators" ? (
+                  <div className="stack">
+                    <h2>Creators</h2>
+                    {dashboard.creators.map((creator) => (
+                      <div key={creator.user_id} className="row">
+                        <span>{creator.display_name}</span>
+                        <span>{creator.service_region}</span>
+                        <span>{creator.verification_status}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
             </>
           ) : null}
 
