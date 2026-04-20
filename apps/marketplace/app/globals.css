@@ -82,6 +82,35 @@ a {
   margin-top: 2rem;
 }
 
+.flowSteps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.flowStep {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 248, 239, 0.82);
+  border: 1px solid rgba(143, 90, 50, 0.12);
+}
+
+.flowStep strong,
+.flowStep span {
+  display: block;
+}
+
+.flowStep span {
+  margin-top: 0.35rem;
+  color: #7b624d;
+}
+
+.activeStep {
+  border-color: rgba(124, 77, 40, 0.55);
+  box-shadow: 0 10px 24px rgba(124, 77, 40, 0.12);
+}
+
 .stat {
   padding: 1rem;
   border-radius: 1rem;

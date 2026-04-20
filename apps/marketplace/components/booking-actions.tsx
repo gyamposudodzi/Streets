@@ -9,6 +9,7 @@ import {
   startBooking
 } from "@streets/api-client";
 import type { AuthSession, Booking } from "@streets/types";
+import { bookingNextStep, formatBookingStatus } from "./booking-status";
 
 const sessionStorageKey = "streets.session";
 
@@ -80,11 +81,8 @@ export function BookingActions({ booking }: BookingActionsProps) {
   return (
     <section className="panel">
       <p className="eyebrow">Lifecycle</p>
-      <h2>Delivery controls</h2>
-      <p>
-        Move the booking from acceptance into delivery, buyer confirmation, or
-        admin-reviewed dispute handling.
-      </p>
+      <h2>{formatBookingStatus(booking.status)}</h2>
+      <p>{bookingNextStep(booking.status)}</p>
 
       {message ? <p>{message}</p> : null}
       {error ? <p className="errorText">{error}</p> : null}

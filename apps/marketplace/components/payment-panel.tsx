@@ -8,6 +8,7 @@ import {
   simulatePaymentSuccess
 } from "@streets/api-client";
 import type { AuthSession, BookingPaymentState, Payment } from "@streets/types";
+import { formatBookingStatus } from "./booking-status";
 
 const sessionStorageKey = "streets.session";
 
@@ -98,7 +99,11 @@ export function PaymentPanel({ bookingId, bookingStatus }: PaymentPanelProps) {
       <div className="panelHeader">
         <div>
           <p className="eyebrow">Payment</p>
-          <h2>Pending funds</h2>
+          <h2>Upfront payment and held funds</h2>
+          <p>
+            Current stage: {formatBookingStatus(bookingStatus)}. Buyer pays first;
+            creator funds stay held until release or refund.
+          </p>
         </div>
         {bookingStatus === "pending_payment" && !pendingPayment ? (
           <button className="button" type="button" onClick={handleCreateIntent} disabled={isBusy}>
@@ -134,7 +139,7 @@ export function PaymentPanel({ bookingId, bookingStatus }: PaymentPanelProps) {
         ) : (
           <article className="card">
             <h3>No payment yet</h3>
-            <p>Create a simulated intent to move this booking toward held funds.</p>
+            <p>Create a simulated intent to represent buyer checkout in development.</p>
           </article>
         )}
       </div>
@@ -168,6 +173,7 @@ export function PaymentPanel({ bookingId, bookingStatus }: PaymentPanelProps) {
 
         <article className="card">
           <h3>Provider events</h3>
+          <p className="note">Technical event trail for payment adapters.</p>
           {paymentState?.webhook_events.length ? (
             paymentState.webhook_events.map((event) => (
               <p key={event.id}>

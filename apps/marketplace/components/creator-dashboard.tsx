@@ -16,6 +16,7 @@ import {
   upsertCreatorProfile
 } from "@streets/api-client";
 import type { AuthSession, Booking, Service } from "@streets/types";
+import { formatBookingStatus } from "./booking-status";
 
 const sessionStorageKey = "streets.session";
 
@@ -286,10 +287,10 @@ export function CreatorDashboard() {
     <section className="panel stack">
       <div>
         <p className="eyebrow">Creator</p>
-        <h1>Manage profile and listings</h1>
+        <h1>Creator control center</h1>
         <p>
-          Signed in as {session.user.email}. Use this dashboard to publish a profile,
-          create services, and add availability slots.
+          Signed in as {session.user.email}. Publish services, manage availability,
+          and choose which paid bookings you want to accept.
         </p>
       </div>
 
@@ -434,7 +435,12 @@ export function CreatorDashboard() {
             </p>
             <p>{service.price} cents</p>
             <p>{service.is_active ? "Active" : "Inactive"}</p>
-            <p>Review: {service.moderation_status}</p>
+            <p>
+              Listing: {service.moderation_status === "approved" ? "Public" : "Held for review"}
+            </p>
+            {service.compliance_score > 0 ? (
+              <p>Admin note: {service.compliance_notes}</p>
+            ) : null}
             <button className="button secondaryButton" type="button" onClick={() => handleToggleService(service)}>
               {service.is_active ? "Deactivate" : "Activate"}
             </button>
@@ -443,13 +449,17 @@ export function CreatorDashboard() {
       </div>
 
       <section className="card stack">
-        <h3>Incoming bookings</h3>
+        <h3>Booking requests</h3>
+        <p>
+          Paid bookings wait for your decision. Accept to start fulfillment, or decline
+          to refund the buyer automatically.
+        </p>
         {bookings.length > 0 ? (
           bookings.map((booking) => (
             <article key={booking.id} className="card stack">
               <p>{booking.id}</p>
               <p>
-                {booking.fulfillment_type} - {booking.status}
+                {booking.fulfillment_type.replace("_", " ")} - {formatBookingStatus(booking.status)}
               </p>
               <p>{booking.scheduled_start ?? "Flexible schedule"}</p>
               <div className="actions">
