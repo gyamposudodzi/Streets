@@ -476,6 +476,17 @@ class SQLiteRepository:
             )
         return self.get_slot(slot_id)
 
+    def release_slot(self, slot_id: str) -> AvailabilitySlot | None:
+        slot = self.get_slot(slot_id)
+        if slot is None:
+            return None
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE availability_slots SET is_reserved = 0 WHERE id = ?",
+                (slot_id,),
+            )
+        return self.get_slot(slot_id)
+
     def create_user(self, user: User) -> User:
         with self._connect() as connection:
             connection.execute(

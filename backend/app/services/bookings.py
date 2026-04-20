@@ -174,6 +174,8 @@ def cancel_booking(booking_id: str, actor: User) -> Booking:
         event_type="booking.cancelled",
         detail="Booking was cancelled.",
     )
+    if booking.slot_id is not None:
+        repository.release_slot(booking.slot_id)
     record_admin_action(
         actor,
         AuditAction.BOOKING_CANCELLED,

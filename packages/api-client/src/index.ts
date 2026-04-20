@@ -4,6 +4,7 @@ import type {
   AppUser,
   AuthSession,
   AuditLog,
+  AutomationRun,
   AvailabilitySlot,
   Booking,
   BookingEvent,
@@ -432,6 +433,33 @@ export function adminReleaseBooking(bookingId: string, accessToken: string) {
 
 export function adminRefundBooking(bookingId: string, accessToken: string) {
   return fetchJson<HeldFunds[]>(`/api/v1/admin/bookings/${bookingId}/refund`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function adminExpireUnpaidBookings(accessToken: string) {
+  return fetchJson<AutomationRun>("/api/v1/admin/automation/expire-unpaid", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function adminAutoReleaseDueBookings(accessToken: string) {
+  return fetchJson<AutomationRun>("/api/v1/admin/automation/auto-release", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function adminRunDueAutomation(accessToken: string) {
+  return fetchJson<AutomationRun>("/api/v1/admin/automation/run-due", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`

@@ -1,4 +1,5 @@
 import os
+from datetime import UTC, datetime, timedelta
 
 os.environ.setdefault("STREETS_SQLITE_PATH", "backend/data/streets_test.db")
 
@@ -652,6 +653,94 @@ def test_participant_can_cancel_booking_before_terminal_state() -> None:
     )
     assert cancel_response.status_code == 200
     assert cancel_response.json()["status"] == "cancelled"
+
+
+def test_admin_automation_expires_unpaid_bookings_and_releases_slots() -> None:
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "expire-buyer@streets.local",
+            "role": "user",
+            "is_age_verified": True,
+        },
+    )
+    buyer_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "expire-buyer@streets.local"},
+    )
+    buyer_headers = {"Authorization": f"Bearer {buyer_login.json()['access_token']}"}
+    service = repository.list_services()[0]
+    slot = repository.list_slots_for_service(service.id)[0]
+    booking_response = client.post(
+        "/api/v1/bookings",
+        json={"service_id": service.id, "slot_id": slot.id},
+        headers=buyer_headers,
+    )
+    assert booking_response.status_code == 201
+    booking_id = booking_response.json()["id"]
+    assert repository.get_slot(slot.id).is_reserved is True
+
+    expired_at = datetime.now(UTC) - timedelta(minutes=30)
+    with repository._connect() as connection:
+        connection.execute(
+            "UPDATE bookings SET created_at = ? WHERE id = ?",
+            (expired_at.isoformat(), booking_id),
+        )
+
+    admin_login = client.post("/api/v1/auth/login", json={"email": "admin@streets.local"})
+    admin_headers = {"Authorization": f"Bearer {admin_login.json()['access_token']}"}
+    automation_response = client.post(
+        "/api/v1/admin/automation/expire-unpaid",
+        headers=admin_headers,
+    )
+
+    assert automation_response.status_code == 200
+    expired_bookings = automation_response.json()["expired_bookings"]
+    assert expired_bookings[0]["id"] == booking_id
+    assert expired_bookings[0]["status"] == "cancelled"
+    assert repository.get_slot(slot.id).is_reserved is False
+
+    event_response = client.get(f"/api/v1/bookings/{booking_id}/events")
+    event_types = [event["event_type"] for event in event_response.json()]
+    assert "booking.expired" in event_types
+
+
+def test_admin_automation_auto_releases_due_bookings() -> None:
+    booking_id, admin_headers = create_paid_booking_for_admin_action(
+        "auto-release-buyer@streets.local"
+    )
+    creator_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "creator@streets.local"},
+    )
+    creator_headers = {
+        "Authorization": f"Bearer {creator_login.json()['access_token']}"
+    }
+    client.post(f"/api/v1/bookings/{booking_id}/accept", headers=creator_headers)
+    client.post(f"/api/v1/bookings/{booking_id}/deliver", headers=creator_headers)
+
+    release_due_at = datetime.now(UTC) - timedelta(minutes=5)
+    with repository._connect() as connection:
+        connection.execute(
+            "UPDATE bookings SET release_at = ? WHERE id = ?",
+            (release_due_at.isoformat(), booking_id),
+        )
+
+    automation_response = client.post(
+        "/api/v1/admin/automation/auto-release",
+        headers=admin_headers,
+    )
+
+    assert automation_response.status_code == 200
+    released_bookings = automation_response.json()["released_bookings"]
+    assert released_bookings[0]["id"] == booking_id
+    assert released_bookings[0]["status"] == "released"
+
+    payment_state_response = client.get(f"/api/v1/payments/bookings/{booking_id}")
+    payment_state = payment_state_response.json()
+    assert payment_state["held_funds"][0]["status"] == "released"
+    ledger_types = [entry["entry_type"] for entry in payment_state["ledger_entries"]]
+    assert "funds_released" in ledger_types
 
 
 def test_booking_messages_are_limited_to_participants_and_admins() -> None:

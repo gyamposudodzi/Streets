@@ -22,7 +22,11 @@ import {
 import type {
   AdminDashboard as AdminDashboardData,
   AuthSession,
-  BookingPaymentState
+  BookingPaymentState,
+  BookingStatus,
+  DisputeStatus,
+  ReportStatus,
+  ServiceModerationStatus
 } from "@streets/types";
 
 const sessionStorageKey = "streets.admin.session";
@@ -37,6 +41,10 @@ type AdminSection =
   | "audit";
 
 type IdentitySection = "users" | "creators";
+type ServiceFilter = ServiceModerationStatus | "all";
+type BookingFilter = "action_needed" | "active" | "disputed" | "completed" | "all";
+type ReportFilter = ReportStatus | "all";
+type DisputeFilter = DisputeStatus | "all";
 
 const adminSections: Array<{ id: AdminSection; label: string; helper: string }> = [
   {
@@ -89,11 +97,70 @@ const identitySections: Array<{ id: IdentitySection; label: string; helper: stri
   }
 ];
 
+const serviceFilters: Array<{ id: ServiceFilter; label: string }> = [
+  { id: "pending_review", label: "Pending review" },
+  { id: "approved", label: "Approved" },
+  { id: "rejected", label: "Rejected" },
+  { id: "all", label: "All" }
+];
+
+const bookingFilters: Array<{ id: BookingFilter; label: string }> = [
+  { id: "action_needed", label: "Action needed" },
+  { id: "active", label: "Active" },
+  { id: "disputed", label: "Disputed" },
+  { id: "completed", label: "Completed" },
+  { id: "all", label: "All" }
+];
+
+const reportFilters: Array<{ id: ReportFilter; label: string }> = [
+  { id: "open", label: "Open" },
+  { id: "reviewing", label: "Reviewing" },
+  { id: "resolved", label: "Resolved" },
+  { id: "dismissed", label: "Dismissed" },
+  { id: "all", label: "All" }
+];
+
+const disputeFilters: Array<{ id: DisputeFilter; label: string }> = [
+  { id: "open", label: "Open" },
+  { id: "reviewing", label: "Reviewing" },
+  { id: "resolved", label: "Resolved" },
+  { id: "all", label: "All" }
+];
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(new Date(value));
+}
+
+function containsSearch(values: Array<string | null | undefined>, search: string) {
+  const normalizedSearch = search.trim().toLowerCase();
+  if (!normalizedSearch) {
+    return true;
+  }
+
+  return values.some((value) => value?.toLowerCase().includes(normalizedSearch));
+}
+
+function bookingMatchesFilter(status: BookingStatus, filter: BookingFilter) {
+  if (filter === "action_needed") {
+    return status === "paid_pending_acceptance";
+  }
+
+  if (filter === "active") {
+    return ["accepted", "in_progress", "delivered", "awaiting_release"].includes(status);
+  }
+
+  if (filter === "disputed") {
+    return status === "disputed";
+  }
+
+  if (filter === "completed") {
+    return ["released", "refunded", "declined", "cancelled"].includes(status);
+  }
+
+  return true;
 }
 
 function readSession(): AuthSession | null {
@@ -118,6 +185,56 @@ export function AdminDashboard() {
   const [ruleAction, setRuleAction] = useState("hold");
   const [activeSection, setActiveSection] = useState<AdminSection>("overview");
   const [activeIdentitySection, setActiveIdentitySection] = useState<IdentitySection>("users");
+  const [queueSearch, setQueueSearch] = useState("");
+  const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("pending_review");
+  const [bookingFilter, setBookingFilter] = useState<BookingFilter>("action_needed");
+  const [reportFilter, setReportFilter] = useState<ReportFilter>("open");
+  const [disputeFilter, setDisputeFilter] = useState<DisputeFilter>("open");
+
+  const filteredServices =
+    dashboard?.services.filter(
+      (service) =>
+        (serviceFilter === "all" || service.moderation_status === serviceFilter) &&
+        containsSearch(
+          [
+            service.id,
+            service.title,
+            service.description,
+            service.category,
+            service.fulfillment_type,
+            service.moderation_status,
+            service.compliance_notes
+          ],
+          queueSearch
+        )
+    ) ?? [];
+  const filteredBookings =
+    dashboard?.bookings.filter(
+      (booking) =>
+        bookingMatchesFilter(booking.status, bookingFilter) &&
+        containsSearch(
+          [booking.id, booking.buyer_id, booking.creator_id, booking.service_id, booking.fulfillment_type, booking.status],
+          queueSearch
+        )
+    ) ?? [];
+  const filteredReports =
+    dashboard?.reports.filter(
+      (report) =>
+        (reportFilter === "all" || report.status === reportFilter) &&
+        containsSearch(
+          [report.id, report.target_type, report.target_id, report.reason, report.details, report.status],
+          queueSearch
+        )
+    ) ?? [];
+  const filteredDisputes =
+    dashboard?.disputes.filter(
+      (dispute) =>
+        (disputeFilter === "all" || dispute.status === disputeFilter) &&
+        containsSearch(
+          [dispute.id, dispute.booking_id, dispute.reason, dispute.details, dispute.resolution, dispute.status],
+          queueSearch
+        )
+    ) ?? [];
 
   useEffect(() => {
     setSession(readSession());
@@ -443,7 +560,10 @@ export function AdminDashboard() {
                     : "subnavButton"
                 }
                 type="button"
-                onClick={() => setActiveSection(section.id)}
+                onClick={() => {
+                  setActiveSection(section.id);
+                  setQueueSearch("");
+                }}
               >
                 <span>{section.label}</span>
                 <small>{section.helper}</small>
@@ -539,8 +659,39 @@ export function AdminDashboard() {
 
           {activeSection === "services" ? (
           <section className="card stack">
-            <h2>Services</h2>
-            {dashboard.services.map((service) => (
+            <div className="panelHeader compactPanelHeader">
+              <div>
+                <h2>Services</h2>
+                <p>Review public listing visibility and moderation outcomes.</p>
+              </div>
+              <div className="sectionCount">
+                {filteredServices.length} of {dashboard.services.length}
+              </div>
+            </div>
+            <div className="queueToolbar">
+              <div className="filterChips" aria-label="Service filters">
+                {serviceFilters.map((filter) => (
+                  <button
+                    key={filter.id}
+                    className={
+                      serviceFilter === filter.id ? "filterChip activeFilterChip" : "filterChip"
+                    }
+                    type="button"
+                    onClick={() => setServiceFilter(filter.id)}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+              <input
+                className="input queueSearch"
+                value={queueSearch}
+                onChange={(event) => setQueueSearch(event.target.value)}
+                placeholder="Search services, categories, notes..."
+              />
+            </div>
+            {filteredServices.length > 0 ? (
+              filteredServices.map((service) => (
               <div key={service.id} className="stack bookingRow">
                 <div className="row">
                   <span>{service.title}</span>
@@ -571,7 +722,10 @@ export function AdminDashboard() {
                   </button>
                 </div>
               </div>
-            ))}
+              ))
+            ) : (
+              <p>No services match this queue.</p>
+            )}
           </section>
           ) : null}
 
@@ -633,9 +787,39 @@ export function AdminDashboard() {
 
           {activeSection === "reports" ? (
           <section className="card stack">
-            <h2>Reports</h2>
-            {dashboard.reports.length > 0 ? (
-              dashboard.reports.map((report) => (
+            <div className="panelHeader compactPanelHeader">
+              <div>
+                <h2>Reports</h2>
+                <p>Work through safety reports by review status.</p>
+              </div>
+              <div className="sectionCount">
+                {filteredReports.length} of {dashboard.reports.length}
+              </div>
+            </div>
+            <div className="queueToolbar">
+              <div className="filterChips" aria-label="Report filters">
+                {reportFilters.map((filter) => (
+                  <button
+                    key={filter.id}
+                    className={
+                      reportFilter === filter.id ? "filterChip activeFilterChip" : "filterChip"
+                    }
+                    type="button"
+                    onClick={() => setReportFilter(filter.id)}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+              <input
+                className="input queueSearch"
+                value={queueSearch}
+                onChange={(event) => setQueueSearch(event.target.value)}
+                placeholder="Search reports, reasons, targets..."
+              />
+            </div>
+            {filteredReports.length > 0 ? (
+              filteredReports.map((report) => (
                 <div key={report.id} className="stack bookingRow">
                   <div className="row">
                     <span>{report.target_type}</span>
@@ -682,16 +866,46 @@ export function AdminDashboard() {
                 </div>
               ))
             ) : (
-              <p>No reports yet.</p>
+              <p>No reports match this queue.</p>
             )}
           </section>
           ) : null}
 
           {activeSection === "disputes" ? (
           <section className="card stack">
-            <h2>Disputes</h2>
-            {dashboard.disputes.length > 0 ? (
-              dashboard.disputes.map((dispute) => (
+            <div className="panelHeader compactPanelHeader">
+              <div>
+                <h2>Disputes</h2>
+                <p>Resolve held-funds outcomes when a booking is contested.</p>
+              </div>
+              <div className="sectionCount">
+                {filteredDisputes.length} of {dashboard.disputes.length}
+              </div>
+            </div>
+            <div className="queueToolbar">
+              <div className="filterChips" aria-label="Dispute filters">
+                {disputeFilters.map((filter) => (
+                  <button
+                    key={filter.id}
+                    className={
+                      disputeFilter === filter.id ? "filterChip activeFilterChip" : "filterChip"
+                    }
+                    type="button"
+                    onClick={() => setDisputeFilter(filter.id)}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+              <input
+                className="input queueSearch"
+                value={queueSearch}
+                onChange={(event) => setQueueSearch(event.target.value)}
+                placeholder="Search disputes, booking IDs, reasons..."
+              />
+            </div>
+            {filteredDisputes.length > 0 ? (
+              filteredDisputes.map((dispute) => (
                 <div key={dispute.id} className="stack bookingRow">
                   <div className="row">
                     <span>{dispute.booking_id}</span>
@@ -721,7 +935,7 @@ export function AdminDashboard() {
                 </div>
               ))
             ) : (
-              <p>No disputes yet.</p>
+              <p>No disputes match this queue.</p>
             )}
           </section>
           ) : null}
@@ -750,9 +964,39 @@ export function AdminDashboard() {
 
           {activeSection === "bookings" ? (
           <section className="card stack">
-            <h2>Bookings</h2>
-            {dashboard.bookings.length > 0 ? (
-              dashboard.bookings.map((booking) => (
+            <div className="panelHeader compactPanelHeader">
+              <div>
+                <h2>Bookings</h2>
+                <p>Monitor booking lifecycle, payment state, and held-funds outcomes.</p>
+              </div>
+              <div className="sectionCount">
+                {filteredBookings.length} of {dashboard.bookings.length}
+              </div>
+            </div>
+            <div className="queueToolbar">
+              <div className="filterChips" aria-label="Booking filters">
+                {bookingFilters.map((filter) => (
+                  <button
+                    key={filter.id}
+                    className={
+                      bookingFilter === filter.id ? "filterChip activeFilterChip" : "filterChip"
+                    }
+                    type="button"
+                    onClick={() => setBookingFilter(filter.id)}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+              <input
+                className="input queueSearch"
+                value={queueSearch}
+                onChange={(event) => setQueueSearch(event.target.value)}
+                placeholder="Search bookings, users, services..."
+              />
+            </div>
+            {filteredBookings.length > 0 ? (
+              filteredBookings.map((booking) => (
                 <div key={booking.id} className="stack bookingRow">
                   <div className="row">
                     <span>{booking.id}</span>
@@ -833,7 +1077,7 @@ export function AdminDashboard() {
                 </div>
               ))
             ) : (
-              <p>No bookings yet.</p>
+              <p>No bookings match this queue.</p>
             )}
           </section>
           ) : null}

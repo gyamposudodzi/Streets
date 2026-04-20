@@ -224,6 +224,7 @@ export type AuditAction =
   | "booking.accepted"
   | "booking.declined"
   | "booking.cancelled"
+  | "booking.expired"
   | "funds.released"
   | "funds.refunded"
   | "report.resolved"
@@ -286,4 +287,9 @@ export type AdminDashboard = {
   disputes: Dispute[];
   audit_logs: AuditLog[];
   moderation_rules: ModerationRule[];
+};
+
+export type AutomationRun = {
+  expired_bookings: Booking[];
+  released_bookings: Booking[];
 };

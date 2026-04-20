@@ -245,6 +245,44 @@ p {
   color: rgba(247, 241, 236, 0.76);
 }
 
+.queueToolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 22rem);
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  background: rgba(247, 241, 236, 0.05);
+  border: 1px solid var(--color-border);
+}
+
+.filterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.filterChip {
+  padding: 0.65rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: rgba(247, 241, 236, 0.07);
+  color: var(--color-muted);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.activeFilterChip {
+  color: var(--color-off-white);
+  background: var(--color-grape-red);
+  border-color: rgba(240, 184, 200, 0.34);
+  box-shadow: 0 12px 24px rgba(122, 22, 50, 0.24);
+}
+
+.queueSearch {
+  min-width: 0;
+}
+
 .row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -280,6 +318,10 @@ p {
   }
 
   .row {
+    grid-template-columns: 1fr;
+  }
+
+  .queueToolbar {
     grid-template-columns: 1fr;
   }
 }

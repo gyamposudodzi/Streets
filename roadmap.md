@@ -16,7 +16,7 @@ Platform boundaries:
 
 ## Current Build Snapshot
 
-Overall status: Phase 0 is complete. Phase 1 is mostly complete. Parts of Phases 2, 3, and 5 are already implemented in MVP/dev form. Phase 4, Android production work, automation jobs, video, uploads, provider integrations, notifications, and audit-log hardening are still pending.
+Overall status: Phase 0 is complete. Phase 1 is mostly complete. Parts of Phases 2, 3, and 5 are already implemented in MVP/dev form. Early automation rules now exist for unpaid booking expiration and due held-funds release. Phase 4, Android production work, worker deployment, video, uploads, provider integrations, notifications, and audit-log hardening are still pending.
 
 Completed foundations:
 
@@ -237,13 +237,15 @@ Completed:
 - Booking lifecycle actions: accept, start, deliver, confirm completion, cancel, dispute.
 - Delivery creates a release review window.
 - Buyer completion moves booking to delivered and ready for admin/manual release.
+- Admin-triggered automation endpoints expire unpaid bookings after the configured hold window.
+- Admin-triggered automation endpoints auto-release due bookings when the release window has passed and no dispute is open.
 
 Partially complete:
 
 - Chat is HTTP polling/manual refresh style, not WebSocket realtime.
 - Attachments and signed upload URLs are pending.
 - Read receipts and delivery statuses are pending.
-- Notification triggers are pending.
+- Worker scheduling and notification triggers are pending.
 - In-person logistics fields and masked location coordination are not implemented yet.
 
 Remaining build steps:
@@ -396,7 +398,7 @@ Recommended next steps from the current codebase:
 1. Expand public-listing compliance scanning during service create/update.
 2. Add dispute evidence fields and admin notes.
 3. Add real payment provider adapter skeletons and webhook signature verification.
-4. Add unpaid booking expiration and auto-release background job skeletons.
+4. Wire unpaid booking expiration and auto-release automation into a real background worker.
 5. Add notification records and email/push adapter skeletons.
 6. Add in-person logistics fields behind neutral language and masked coordination rules.
 7. Add creator verification workflow, especially for in-person fulfillment.

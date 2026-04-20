@@ -5,7 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.dependencies import require_admin_user
 from app.models.entities import ModerationRule, User
 from app.repositories.sqlite import repository
-from app.schemas.admin import AdminDashboardResponse, AdminOverviewResponse
+from app.schemas.admin import (
+    AdminDashboardResponse,
+    AdminOverviewResponse,
+    AutomationRunResponse,
+)
 from app.schemas.audit import AuditLogResponse
 from app.schemas.auth import UserResponse
 from app.schemas.bookings import BookingResponse
@@ -21,6 +25,11 @@ from app.schemas.payments import HeldFundsResponse
 from app.schemas.reports import ReportResolveRequest, ReportResponse
 from app.domain.enums import AuditAction
 from app.services.audit import record_admin_action
+from app.services.automation import (
+    auto_release_due_bookings,
+    expire_unpaid_bookings,
+    run_due_automation,
+)
 from app.services.payments import release_held_funds_for_booking, refund_held_funds_for_booking
 from app.services.reports import resolve_report
 
@@ -251,6 +260,47 @@ def admin_dashboard(_: User = Depends(require_admin_user)) -> AdminDashboardResp
         moderation_rules=[
             ModerationRuleResponse.model_validate(rule.model_dump())
             for rule in moderation_rules
+        ],
+    )
+
+
+@router.post("/automation/expire-unpaid", response_model=AutomationRunResponse)
+def admin_expire_unpaid_bookings(
+    actor: User = Depends(require_admin_user),
+) -> AutomationRunResponse:
+    expired = expire_unpaid_bookings(actor)
+    return AutomationRunResponse(
+        expired_bookings=[
+            BookingResponse.model_validate(booking.model_dump()) for booking in expired
+        ],
+        released_bookings=[],
+    )
+
+
+@router.post("/automation/auto-release", response_model=AutomationRunResponse)
+def admin_auto_release_due_bookings(
+    actor: User = Depends(require_admin_user),
+) -> AutomationRunResponse:
+    released = auto_release_due_bookings(actor)
+    return AutomationRunResponse(
+        expired_bookings=[],
+        released_bookings=[
+            BookingResponse.model_validate(booking.model_dump()) for booking in released
+        ],
+    )
+
+
+@router.post("/automation/run-due", response_model=AutomationRunResponse)
+def admin_run_due_automation(
+    actor: User = Depends(require_admin_user),
+) -> AutomationRunResponse:
+    expired, released = run_due_automation(actor)
+    return AutomationRunResponse(
+        expired_bookings=[
+            BookingResponse.model_validate(booking.model_dump()) for booking in expired
+        ],
+        released_bookings=[
+            BookingResponse.model_validate(booking.model_dump()) for booking in released
         ],
     )
 

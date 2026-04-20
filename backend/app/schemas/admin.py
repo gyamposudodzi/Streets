@@ -29,3 +29,8 @@ class AdminDashboardResponse(BaseModel):
     disputes: list[DisputeResponse]
     audit_logs: list[AuditLogResponse]
     moderation_rules: list[ModerationRuleResponse]
+
+
+class AutomationRunResponse(BaseModel):
+    expired_bookings: list[BookingResponse]
+    released_bookings: list[BookingResponse]

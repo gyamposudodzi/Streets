@@ -104,6 +104,7 @@ class AuditAction(StrEnum):
     BOOKING_ACCEPTED = "booking.accepted"
     BOOKING_DECLINED = "booking.declined"
     BOOKING_CANCELLED = "booking.cancelled"
+    BOOKING_EXPIRED = "booking.expired"
     FUNDS_RELEASED = "funds.released"
     FUNDS_REFUNDED = "funds.refunded"
     REPORT_RESOLVED = "report.resolved"
