@@ -95,6 +95,12 @@ a {
   box-shadow: var(--shadow-card);
 }
 
+.panel .panel {
+  max-width: none;
+  margin: 0;
+  box-shadow: none;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));

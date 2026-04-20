@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import {
+  cancelBooking,
   completeBooking,
   deliverBooking,
   disputeBooking,
@@ -33,6 +34,11 @@ export function BookingActions({ booking }: BookingActionsProps) {
   useEffect(() => {
     setSession(readSession());
   }, []);
+
+  const isBuyer = session?.user.id === booking.buyer_id;
+  const isCreator = session?.user.id === booking.creator_id;
+  const isAdmin = session?.user.role === "admin";
+  const isParticipant = Boolean(isBuyer || isCreator || isAdmin);
 
   async function runAction(action: () => Promise<unknown>, successMessage: string) {
     if (!session) {
@@ -67,16 +73,19 @@ export function BookingActions({ booking }: BookingActionsProps) {
     );
   }
 
-  const canStart = booking.status === "accepted";
-  const canDeliver = booking.status === "accepted" || booking.status === "in_progress";
-  const canComplete = booking.status === "awaiting_release";
+  const canStart = (isCreator || isAdmin) && booking.status === "accepted";
+  const canDeliver =
+    (isCreator || isAdmin) && (booking.status === "accepted" || booking.status === "in_progress");
+  const canComplete = (isBuyer || isAdmin) && booking.status === "awaiting_release";
+  const canCancel =
+    isParticipant && !["cancelled", "declined", "released", "refunded"].includes(booking.status);
   const canDispute = [
     "paid_pending_acceptance",
     "accepted",
     "in_progress",
     "awaiting_release",
     "delivered"
-  ].includes(booking.status);
+  ].includes(booking.status) && isParticipant;
 
   return (
     <section className="panel">
@@ -133,7 +142,29 @@ export function BookingActions({ booking }: BookingActionsProps) {
             Confirm completion
           </button>
         ) : null}
+        {canCancel ? (
+          <button
+            className="button secondaryButton"
+            type="button"
+            disabled={isBusy}
+            onClick={() =>
+              runAction(
+                () => cancelBooking(booking.id, session?.access_token ?? ""),
+                "Booking cancelled."
+              )
+            }
+          >
+            Cancel booking
+          </button>
+        ) : null}
       </div>
+
+      {!session ? (
+        <article className="checkoutNotice">
+          <strong>Sign in to act on this booking</strong>
+          <span>Only the buyer, creator, or admin can update this booking.</span>
+        </article>
+      ) : null}
 
       {canDispute ? (
         <form className="stack formShell" onSubmit={handleDispute}>

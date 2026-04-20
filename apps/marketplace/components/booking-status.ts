@@ -7,7 +7,7 @@ export function formatBookingStatus(status: BookingStatus | string) {
     paid_pending_acceptance: "Waiting for creator decision",
     accepted: "Accepted by creator",
     in_progress: "In progress",
-    delivered: "Buyer confirmed completion",
+    delivered: "Completion confirmed",
     awaiting_release: "Delivered, awaiting release window",
     disputed: "In dispute review",
     declined: "Declined by creator",

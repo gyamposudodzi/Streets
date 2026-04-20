@@ -1,12 +1,9 @@
 import { notFound } from "next/navigation";
 
 import { getBooking, listBookingEvents } from "@streets/api-client";
-import { BookingActions } from "../../../components/booking-actions";
-import { BookingChat } from "../../../components/booking-chat";
 import { bookingNextStep, formatBookingStatus } from "../../../components/booking-status";
-import { PaymentPanel } from "../../../components/payment-panel";
+import { BookingWorkspace } from "../../../components/booking-workspace";
 import { StatusPill } from "../../../components/status-pill";
-import { TimelineEventCard } from "../../../components/timeline-event-card";
 import { WorkflowStepper } from "../../../components/workflow-stepper";
 
 type BookingDetailPageProps = {
@@ -63,25 +60,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
         <h2>How this booking moves</h2>
         <WorkflowStepper status={booking.status} />
       </section>
-      <PaymentPanel bookingId={booking.id} bookingStatus={booking.status} />
-      <BookingActions booking={booking} />
-      <BookingChat bookingId={booking.id} />
-      <section className="panel">
-        <p className="eyebrow">Timeline</p>
-        <h2>Booking events</h2>
-        <div className="stack">
-          {events.length > 0 ? (
-            events.map((event) => (
-              <TimelineEventCard key={event.id} event={event} />
-            ))
-          ) : (
-            <article className="card">
-              <h3>No events found</h3>
-              <p>This booking has not emitted any visible events yet.</p>
-            </article>
-          )}
-        </div>
-      </section>
+      <BookingWorkspace booking={booking} events={events} />
     </main>
   );
 }
