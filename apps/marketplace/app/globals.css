@@ -295,6 +295,59 @@ a {
   color: rgba(247, 241, 236, 0.78);
 }
 
+.segmentedControl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.45rem;
+  border-radius: 999px;
+  width: fit-content;
+  max-width: 100%;
+  background: rgba(122, 22, 50, 0.08);
+  border: 1px solid var(--color-border);
+}
+
+.segmentButton {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.activeSegmentButton {
+  color: var(--color-off-white);
+  background: var(--color-grape-red);
+  box-shadow: 0 10px 20px rgba(122, 22, 50, 0.2);
+}
+
+.bookingCard {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(247, 241, 236, 0.86)),
+    var(--color-paper);
+}
+
+.bookingCardHeader,
+.bookingMetaGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.bookingCardHeader {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.bookingMetaGrid {
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(122, 22, 50, 0.06);
+  color: var(--color-muted);
+}
+
 .panelHeader {
   display: flex;
   align-items: flex-end;
@@ -454,5 +507,18 @@ h3 {
   .panelHeader {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .segmentedControl {
+    width: 100%;
+    border-radius: 1rem;
+  }
+
+  .segmentButton {
+    flex: 1 1 9rem;
+  }
+
+  .bookingCardHeader {
+    grid-template-columns: 1fr;
   }
 }

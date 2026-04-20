@@ -9,13 +9,16 @@ import {
   createCreatorService,
   createServiceSlot,
   declineBooking,
+  deliverBooking,
   getCreator,
+  getBookingPaymentState,
   listCreatorBookings,
   listServices,
+  startBooking,
   updateCreatorService,
   upsertCreatorProfile
 } from "@streets/api-client";
-import type { AuthSession, Booking, Service } from "@streets/types";
+import type { AuthSession, Booking, BookingPaymentState, BookingStatus, Service } from "@streets/types";
 import { formatBookingStatus } from "./booking-status";
 
 const sessionStorageKey = "streets.session";
@@ -38,6 +41,7 @@ const emptyService = {
 };
 
 type CreatorSection = "profile" | "services" | "availability" | "bookings";
+type BookingFilter = "action_needed" | "active" | "completed" | "all";
 
 const creatorSections: Array<{ id: CreatorSection; label: string; helper: string }> = [
   {
@@ -62,11 +66,58 @@ const creatorSections: Array<{ id: CreatorSection; label: string; helper: string
   }
 ];
 
+const bookingFilters: Array<{ id: BookingFilter; label: string }> = [
+  {
+    id: "action_needed",
+    label: "Action needed"
+  },
+  {
+    id: "active",
+    label: "Active"
+  },
+  {
+    id: "completed",
+    label: "Completed"
+  },
+  {
+    id: "all",
+    label: "All"
+  }
+];
+
+function formatDateTime(value: string | null) {
+  if (!value) {
+    return "Flexible schedule";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(value));
+}
+
+function bookingMatchesFilter(status: BookingStatus, filter: BookingFilter) {
+  if (filter === "action_needed") {
+    return status === "paid_pending_acceptance";
+  }
+
+  if (filter === "active") {
+    return ["accepted", "in_progress", "delivered", "awaiting_release", "disputed"].includes(status);
+  }
+
+  if (filter === "completed") {
+    return ["released", "refunded", "declined", "cancelled"].includes(status);
+  }
+
+  return true;
+}
+
 export function CreatorDashboard() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [profile, setProfile] = useState(emptyProfile);
   const [services, setServices] = useState<Service[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [paymentStates, setPaymentStates] = useState<Record<string, BookingPaymentState>>({});
   const [slotServiceId, setSlotServiceId] = useState("");
   const [slotStart, setSlotStart] = useState("");
   const [slotEnd, setSlotEnd] = useState("");
@@ -74,6 +125,12 @@ export function CreatorDashboard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [activeSection, setActiveSection] = useState<CreatorSection>("profile");
+  const [bookingFilter, setBookingFilter] = useState<BookingFilter>("action_needed");
+
+  const servicesById = new Map(services.map((service) => [service.id, service]));
+  const filteredBookings = bookings.filter((booking) =>
+    bookingMatchesFilter(booking.status, bookingFilter)
+  );
 
   useEffect(() => {
     const raw = window.localStorage.getItem(sessionStorageKey);
@@ -275,6 +332,52 @@ export function CreatorDashboard() {
       setMessage("Booking cancelled.");
     } catch {
       setError("Booking cancellation failed.");
+    }
+  }
+
+  async function handleStartBooking(bookingId: string) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      const updated = await startBooking(bookingId, session.access_token);
+      setBookings((current) =>
+        current.map((booking) => (booking.id === updated.id ? updated : booking))
+      );
+      setMessage("Booking marked in progress.");
+    } catch {
+      setError("Could not start this booking. Confirm it has been accepted first.");
+    }
+  }
+
+  async function handleDeliverBooking(bookingId: string) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    try {
+      const updated = await deliverBooking(bookingId, session.access_token);
+      setBookings((current) =>
+        current.map((booking) => (booking.id === updated.id ? updated : booking))
+      );
+      setMessage("Booking marked delivered and moved into release review.");
+    } catch {
+      setError("Could not mark this booking delivered.");
+    }
+  }
+
+  async function handleLoadPaymentState(bookingId: string) {
+    setError("");
+    try {
+      const state = await getBookingPaymentState(bookingId);
+      setPaymentStates((current) => ({ ...current, [bookingId]: state }));
+    } catch {
+      setError("Could not load payment state for this booking.");
     }
   }
 
@@ -514,53 +617,125 @@ export function CreatorDashboard() {
 
       {activeSection === "bookings" ? (
         <section className="card stack">
-          <h3>Booking requests</h3>
-          <p>
-            Paid bookings wait for your decision. Accept to start fulfillment, or decline
-            to refund the buyer automatically.
-          </p>
-          {bookings.length > 0 ? (
-            bookings.map((booking) => (
-              <article key={booking.id} className="card stack">
-                <p>{booking.id}</p>
-                <p>
-                  {booking.fulfillment_type.replace("_", " ")} -{" "}
-                  {formatBookingStatus(booking.status)}
-                </p>
-                <p>{booking.scheduled_start ?? "Flexible schedule"}</p>
-                <div className="actions">
-                  {booking.status === "paid_pending_acceptance" ? (
-                    <>
+          <div className="panelHeader">
+            <div>
+              <h3>Booking requests</h3>
+              <p className="note">
+                Paid bookings wait for your decision. Accept to start fulfillment,
+                deliver when finished, or decline to refund the buyer automatically.
+              </p>
+            </div>
+            <p className="badge">{bookings.length} total</p>
+          </div>
+          <div className="segmentedControl" role="tablist" aria-label="Booking filters">
+            {bookingFilters.map((filter) => (
+              <button
+                key={filter.id}
+                className={
+                  bookingFilter === filter.id ? "segmentButton activeSegmentButton" : "segmentButton"
+                }
+                type="button"
+                onClick={() => setBookingFilter(filter.id)}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+          {filteredBookings.length > 0 ? (
+            filteredBookings.map((booking) => {
+              const service = servicesById.get(booking.service_id);
+              const paymentState = paymentStates[booking.id];
+
+              return (
+                <article key={booking.id} className="card stack bookingCard">
+                  <div className="bookingCardHeader">
+                    <div>
+                      <p className="badge">{booking.fulfillment_type.replace("_", " ")}</p>
+                      <h3>{service?.title ?? "Booked service"}</h3>
+                      <p className="note">{booking.id}</p>
+                    </div>
+                    <p className="statusPill">{formatBookingStatus(booking.status)}</p>
+                  </div>
+                  <div className="bookingMetaGrid">
+                    <span>Buyer: {booking.buyer_id}</span>
+                    <span>Starts: {formatDateTime(booking.scheduled_start)}</span>
+                    <span>Ends: {formatDateTime(booking.scheduled_end)}</span>
+                    <span>
+                      Release: {booking.release_at ? formatDateTime(booking.release_at) : "Not scheduled"}
+                    </span>
+                  </div>
+                  <div className="actions">
+                    {booking.status === "paid_pending_acceptance" ? (
+                      <>
+                        <button
+                          className="button"
+                          type="button"
+                          onClick={() => handleAcceptBooking(booking.id)}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          className="button secondaryButton"
+                          type="button"
+                          onClick={() => handleDeclineBooking(booking.id)}
+                        >
+                          Decline
+                        </button>
+                      </>
+                    ) : null}
+                    {booking.status === "accepted" ? (
                       <button
                         className="button"
                         type="button"
-                        onClick={() => handleAcceptBooking(booking.id)}
+                        onClick={() => handleStartBooking(booking.id)}
                       >
-                        Accept
+                        Start service
                       </button>
+                    ) : null}
+                    {["accepted", "in_progress"].includes(booking.status) ? (
                       <button
-                        className="button secondaryButton"
+                        className="button"
                         type="button"
-                        onClick={() => handleDeclineBooking(booking.id)}
+                        onClick={() => handleDeliverBooking(booking.id)}
                       >
-                        Decline
+                        Mark delivered
                       </button>
-                    </>
-                  ) : null}
-                  {!["cancelled", "declined", "released", "refunded"].includes(booking.status) ? (
+                    ) : null}
                     <button
                       className="button secondaryButton"
                       type="button"
-                      onClick={() => handleCancelBooking(booking.id)}
+                      onClick={() => handleLoadPaymentState(booking.id)}
                     >
-                      Cancel
+                      Load payment state
                     </button>
+                    {!["cancelled", "declined", "released", "refunded"].includes(booking.status) ? (
+                      <button
+                        className="button secondaryButton"
+                        type="button"
+                        onClick={() => handleCancelBooking(booking.id)}
+                      >
+                        Cancel
+                      </button>
+                    ) : null}
+                  </div>
+                  {paymentState ? (
+                    <div className="checkoutNotice">
+                      <strong>Payment state</strong>
+                      <span>Payments: {paymentState.payments.length}</span>
+                      <span>Held funds: {paymentState.held_funds.length}</span>
+                      <span>Ledger entries: {paymentState.ledger_entries.length}</span>
+                      {paymentState.held_funds.map((heldFund) => (
+                        <span key={heldFund.id}>
+                          {heldFund.status}: {heldFund.amount} {heldFund.currency}
+                        </span>
+                      ))}
+                    </div>
                   ) : null}
-                </div>
-              </article>
-            ))
+                </article>
+              );
+            })
           ) : (
-            <p>No bookings yet.</p>
+            <p>No bookings in this view.</p>
           )}
         </section>
       ) : null}
