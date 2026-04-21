@@ -4,12 +4,15 @@ import { useEffect, useState } from "react";
 
 import {
   acceptBooking,
+  adminAutoReleaseDueBookings,
   adminApproveService,
+  adminExpireUnpaidBookings,
   adminRefundBooking,
   adminRejectService,
   adminReleaseBooking,
   adminResolveDispute,
   adminResolveReport,
+  adminRunDueAutomation,
   cancelBooking,
   createModerationRule,
   declineBooking,
@@ -22,6 +25,7 @@ import {
 import type {
   AdminDashboard as AdminDashboardData,
   AuthSession,
+  AutomationRun,
   BookingPaymentState,
   BookingStatus,
   DisputeStatus,
@@ -37,6 +41,7 @@ type AdminSection =
   | "bookings"
   | "reports"
   | "disputes"
+  | "automation"
   | "rules"
   | "audit";
 
@@ -71,6 +76,11 @@ const adminSections: Array<{ id: AdminSection; label: string; helper: string }> 
     id: "disputes",
     label: "Disputes",
     helper: "Buyer and creator dispute decisions"
+  },
+  {
+    id: "automation",
+    label: "Automation",
+    helper: "Run booking expiration and release rules"
   },
   {
     id: "rules",
@@ -190,6 +200,8 @@ export function AdminDashboard() {
   const [bookingFilter, setBookingFilter] = useState<BookingFilter>("action_needed");
   const [reportFilter, setReportFilter] = useState<ReportFilter>("open");
   const [disputeFilter, setDisputeFilter] = useState<DisputeFilter>("open");
+  const [automationResult, setAutomationResult] = useState<AutomationRun | null>(null);
+  const [isAutomationBusy, setIsAutomationBusy] = useState(false);
 
   const filteredServices =
     dashboard?.services.filter(
@@ -485,6 +497,31 @@ export function AdminDashboard() {
       setMessage("Public wording rule updated.");
     } catch {
       setError("Could not update public wording rule.");
+    }
+  }
+
+  async function handleRunAutomation(
+    action: (accessToken: string) => Promise<AutomationRun>,
+    successLabel: string
+  ) {
+    if (!session) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    setIsAutomationBusy(true);
+    try {
+      const result = await action(session.access_token);
+      setAutomationResult(result);
+      await reloadDashboard(session.access_token);
+      setMessage(
+        `${successLabel}: ${result.expired_bookings.length} expired, ${result.released_bookings.length} released.`
+      );
+    } catch {
+      setError("Automation run failed. Confirm the backend is running and the session is admin.");
+    } finally {
+      setIsAutomationBusy(false);
     }
   }
 
@@ -936,6 +973,103 @@ export function AdminDashboard() {
               ))
             ) : (
               <p>No disputes match this queue.</p>
+            )}
+          </section>
+          ) : null}
+
+          {activeSection === "automation" ? (
+          <section className="card stack">
+            <div className="panelHeader compactPanelHeader">
+              <div>
+                <p className="eyebrow">Automation</p>
+                <h2>Booking rules runner</h2>
+                <p>
+                  Run backend automation manually while we are still in development.
+                  Later these same rules can be scheduled through Celery or Dramatiq.
+                </p>
+              </div>
+              <div className="sectionCount">
+                Admin only
+              </div>
+            </div>
+
+            <div className="automationGrid">
+              <article className="automationCard">
+                <p className="eyebrow">Unpaid holds</p>
+                <h3>Expire unpaid bookings</h3>
+                <p>
+                  Cancels bookings that stayed unpaid beyond the configured hold window
+                  and frees reserved availability slots.
+                </p>
+                <button
+                  className="button"
+                  type="button"
+                  disabled={isAutomationBusy}
+                  onClick={() =>
+                    handleRunAutomation(adminExpireUnpaidBookings, "Unpaid booking expiration complete")
+                  }
+                >
+                  Expire unpaid
+                </button>
+              </article>
+
+              <article className="automationCard">
+                <p className="eyebrow">Release window</p>
+                <h3>Auto-release due bookings</h3>
+                <p>
+                  Releases held funds for delivered bookings whose release deadline has
+                  passed, as long as no unresolved dispute is open.
+                </p>
+                <button
+                  className="button"
+                  type="button"
+                  disabled={isAutomationBusy}
+                  onClick={() =>
+                    handleRunAutomation(adminAutoReleaseDueBookings, "Due auto-release complete")
+                  }
+                >
+                  Auto-release due
+                </button>
+              </article>
+
+              <article className="automationCard featuredAutomationCard">
+                <p className="eyebrow">Combined run</p>
+                <h3>Run all due rules</h3>
+                <p>
+                  Runs both expiration and auto-release checks in one pass, then refreshes
+                  dashboard counts and queues.
+                </p>
+                <button
+                  className="button secondaryButton"
+                  type="button"
+                  disabled={isAutomationBusy}
+                  onClick={() =>
+                    handleRunAutomation(adminRunDueAutomation, "Automation run complete")
+                  }
+                >
+                  Run due automation
+                </button>
+              </article>
+            </div>
+
+            {automationResult ? (
+              <div className="paymentState">
+                <h3>Last automation result</h3>
+                <p>Expired bookings: {automationResult.expired_bookings.length}</p>
+                <p>Released bookings: {automationResult.released_bookings.length}</p>
+                {automationResult.expired_bookings.map((booking) => (
+                  <p key={booking.id}>
+                    Expired: {booking.id} - {booking.status}
+                  </p>
+                ))}
+                {automationResult.released_bookings.map((booking) => (
+                  <p key={booking.id}>
+                    Released: {booking.id} - {booking.status}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p>No automation run has been triggered in this session.</p>
             )}
           </section>
           ) : null}

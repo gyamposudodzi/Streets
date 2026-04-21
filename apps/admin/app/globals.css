@@ -283,6 +283,33 @@ p {
   min-width: 0;
 }
 
+.automationGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.automationCard {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+  padding: 1rem;
+  border-radius: 1.1rem;
+  background: rgba(247, 241, 236, 0.06);
+  border: 1px solid var(--color-border);
+}
+
+.automationCard h3,
+.automationCard p {
+  margin: 0;
+}
+
+.featuredAutomationCard {
+  background:
+    radial-gradient(circle at top right, rgba(122, 22, 50, 0.42), transparent 12rem),
+    rgba(247, 241, 236, 0.07);
+}
+
 .row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
