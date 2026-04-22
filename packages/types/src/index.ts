@@ -218,6 +218,27 @@ export type Dispute = {
   resolved_at: string | null;
 };
 
+export type DisputeEvidence = {
+  id: string;
+  dispute_id: string;
+  submitted_by_user_id: string;
+  evidence_type: string;
+  title: string;
+  description: string | null;
+  file_url: string | null;
+  is_admin_only: boolean;
+  created_at: string;
+};
+
+export type DisputeNote = {
+  id: string;
+  dispute_id: string;
+  author_user_id: string;
+  body: string;
+  is_internal: boolean;
+  created_at: string;
+};
+
 export type AuditAction =
   | "service.approved"
   | "service.rejected"

@@ -26,7 +26,7 @@ Completed foundations:
 - Next.js marketplace app and Next.js admin app.
 - Shared TypeScript API client and shared type package.
 - Development auth with user, creator, and admin roles.
-- Creator profiles, service listings, service moderation state, admin-managed public wording rules, availability slots, booking creation, booking events, simulated payments, held funds, ledger entries, chat, reports, disputes, and admin release/refund tools.
+- Creator profiles, service listings, service moderation state, admin-managed public wording rules, availability slots, booking creation, booking events, simulated payments, held funds, ledger entries, chat, reports, disputes, admin release/refund tools, and admin-triggered automation controls.
 
 Partially complete foundations:
 
@@ -34,9 +34,9 @@ Partially complete foundations:
 - Email verification is represented in the data model, but no email/OTP delivery flow exists yet.
 - Payment flow is simulated behind an internal provider abstraction with provider-event storage. No real payment service provider, signed webhook verification, payout rails, or chargeback handling exists yet.
 - Chat is persisted over HTTP, but WebSockets, Redis fanout, read receipts, attachments, retention rules, and moderation scanning are still pending.
-- Disputes exist with full release/refund resolution, and admin audit logs now capture key decisions. Partial refunds, evidence attachments, and admin notes are pending.
+- Disputes exist with full release/refund resolution, participant-visible evidence/notes, admin-only internal evidence/notes, and admin audit logs for key decisions. Partial refunds and file upload-backed evidence are pending.
 - Public listing compliance rules exist with admin-controlled words/phrases. Clean services auto-approve; matched hold rules keep listings out of discovery for review. Media review is pending.
-- Admin dashboard exists, but it is still MVP-level and not permission-tiered.
+- Admin dashboard exists with focused submenus, queue filters, automation controls, and MVP operations tooling, but it is not permission-tiered yet.
 
 Not started:
 
@@ -239,6 +239,7 @@ Completed:
 - Buyer completion moves booking to delivered and ready for admin/manual release.
 - Admin-triggered automation endpoints expire unpaid bookings after the configured hold window.
 - Admin-triggered automation endpoints auto-release due bookings when the release window has passed and no dispute is open.
+- Admin dashboard includes an Automation panel to run unpaid expiration, due auto-release, or both rules together.
 
 Partially complete:
 
@@ -294,8 +295,11 @@ Completed:
 - Booking dispute creation freezes booking into disputed state.
 - Admin dispute list in dashboard.
 - Admin dispute resolution through release or refund.
+- Dispute evidence and notes APIs with participant/admin access controls.
+- Admin-only internal dispute evidence and notes.
 - Audit logs for service approval/rejection, booking admin accept/cancel, fund release/refund, report resolution, and dispute resolution.
 - Recent audit log visibility in the admin dashboard.
+- Admin dashboard includes submenus, queue filters, search, and manual automation controls.
 
 Partially complete:
 
@@ -303,13 +307,14 @@ Partially complete:
 - No media moderation.
 - Audit logs are append-only at the app level, but stronger database immutability controls and richer metadata are still pending.
 - No account suspension/block controls.
-- No partial refund or evidence attachment support.
+- No partial refund support.
+- Dispute evidence currently stores metadata and optional URLs; signed upload-backed attachments are still pending.
 
 Remaining build steps:
 
 1. Add `moderation_actions`.
 2. Expand public wording scanner for service titles/descriptions.
-3. Add evidence attachments and admin notes to disputes.
+3. Add signed upload-backed dispute evidence attachments.
 4. Add partial refund support.
 5. Add user/creator suspension and listing takedown tools.
 6. Harden audit logs with request metadata, before/after snapshots, and database-level immutability constraints.
@@ -390,16 +395,17 @@ Admin workflow:
 5. Admin releases or refunds held funds.
 6. Admin resolves reports.
 7. Admin resolves disputes through release or refund.
+8. Admin can run development automation for unpaid booking expiration and due held-funds release.
 
 ## Immediate Next Build Order
 
 Recommended next steps from the current codebase:
 
-1. Expand public-listing compliance scanning during service create/update.
-2. Add dispute evidence fields and admin notes.
-3. Add real payment provider adapter skeletons and webhook signature verification.
-4. Wire unpaid booking expiration and auto-release automation into a real background worker.
-5. Add notification records and email/push adapter skeletons.
+1. Add admin and marketplace UI for dispute evidence and notes.
+2. Add notification records and email/push adapter skeletons for booking updates.
+3. Wire unpaid booking expiration and auto-release automation into a real background worker.
+4. Add signed upload-backed dispute evidence attachments.
+5. Add real payment provider adapter skeletons and webhook signature verification.
 6. Add in-person logistics fields behind neutral language and masked coordination rules.
 7. Add creator verification workflow, especially for in-person fulfillment.
 8. Harden audit logs with request metadata and database-level immutability constraints.

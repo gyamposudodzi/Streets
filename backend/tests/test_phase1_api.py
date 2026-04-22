@@ -625,6 +625,136 @@ def test_booking_dispute_blocks_release_until_admin_resolution() -> None:
     assert "refund_issued" in ledger_types
 
 
+def test_dispute_evidence_and_notes_are_access_controlled() -> None:
+    booking_id, admin_headers = create_paid_booking_for_admin_action(
+        "evidence-buyer@streets.local"
+    )
+    creator_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "creator@streets.local"},
+    )
+    creator_headers = {
+        "Authorization": f"Bearer {creator_login.json()['access_token']}"
+    }
+    client.post(f"/api/v1/bookings/{booking_id}/accept", headers=creator_headers)
+    client.post(f"/api/v1/bookings/{booking_id}/deliver", headers=creator_headers)
+
+    buyer_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "evidence-buyer@streets.local"},
+    )
+    buyer_headers = {
+        "Authorization": f"Bearer {buyer_login.json()['access_token']}"
+    }
+    dispute_response = client.post(
+        f"/api/v1/bookings/{booking_id}/dispute",
+        json={
+            "reason": "Needs review",
+            "details": "Adding dispute evidence.",
+        },
+        headers=buyer_headers,
+    )
+    assert dispute_response.status_code == 200
+    dispute_id = dispute_response.json()["id"]
+
+    evidence_response = client.post(
+        f"/api/v1/disputes/{dispute_id}/evidence",
+        json={
+            "evidence_type": "message",
+            "title": "Conversation summary",
+            "description": "Buyer-visible dispute context.",
+        },
+        headers=buyer_headers,
+    )
+    assert evidence_response.status_code == 201
+    assert evidence_response.json()["is_admin_only"] is False
+
+    note_response = client.post(
+        f"/api/v1/disputes/{dispute_id}/notes",
+        json={"body": "Buyer note for the review."},
+        headers=buyer_headers,
+    )
+    assert note_response.status_code == 201
+    assert note_response.json()["is_internal"] is False
+
+    forbidden_internal_note = client.post(
+        f"/api/v1/disputes/{dispute_id}/notes",
+        json={"body": "Not allowed", "is_internal": True},
+        headers=buyer_headers,
+    )
+    assert forbidden_internal_note.status_code == 403
+
+    admin_evidence_response = client.post(
+        f"/api/v1/disputes/{dispute_id}/evidence",
+        json={
+            "evidence_type": "admin_review",
+            "title": "Internal review",
+            "description": "Admin-only review context.",
+            "is_admin_only": True,
+        },
+        headers=admin_headers,
+    )
+    assert admin_evidence_response.status_code == 201
+    assert admin_evidence_response.json()["is_admin_only"] is True
+
+    admin_note_response = client.post(
+        f"/api/v1/disputes/{dispute_id}/notes",
+        json={"body": "Internal admin note.", "is_internal": True},
+        headers=admin_headers,
+    )
+    assert admin_note_response.status_code == 201
+    assert admin_note_response.json()["is_internal"] is True
+
+    buyer_evidence = client.get(
+        f"/api/v1/disputes/{dispute_id}/evidence",
+        headers=buyer_headers,
+    )
+    assert buyer_evidence.status_code == 200
+    assert len(buyer_evidence.json()) == 1
+
+    admin_evidence = client.get(
+        f"/api/v1/disputes/{dispute_id}/evidence",
+        headers=admin_headers,
+    )
+    assert admin_evidence.status_code == 200
+    assert len(admin_evidence.json()) == 2
+
+    buyer_notes = client.get(
+        f"/api/v1/disputes/{dispute_id}/notes",
+        headers=buyer_headers,
+    )
+    assert buyer_notes.status_code == 200
+    assert len(buyer_notes.json()) == 1
+
+    admin_notes = client.get(
+        f"/api/v1/disputes/{dispute_id}/notes",
+        headers=admin_headers,
+    )
+    assert admin_notes.status_code == 200
+    assert len(admin_notes.json()) == 2
+
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "dispute-outsider@streets.local",
+            "role": "user",
+            "is_age_verified": True,
+        },
+    )
+    outsider_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "dispute-outsider@streets.local"},
+    )
+    outsider_headers = {
+        "Authorization": f"Bearer {outsider_login.json()['access_token']}"
+    }
+    outsider_response = client.get(
+        f"/api/v1/disputes/{dispute_id}/notes",
+        headers=outsider_headers,
+    )
+    assert outsider_response.status_code == 403
+
+
 def test_participant_can_cancel_booking_before_terminal_state() -> None:
     register_response = client.post(
         "/api/v1/auth/register",

@@ -12,6 +12,8 @@ from app.models.entities import (
     BookingEvent,
     CreatorProfile,
     Dispute,
+    DisputeEvidence,
+    DisputeNote,
     HeldFunds,
     LedgerEntry,
     Message,
@@ -75,6 +77,39 @@ class SQLiteRepository:
             )
         if "compliance_notes" not in service_columns:
             connection.execute("ALTER TABLE services ADD COLUMN compliance_notes TEXT")
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS dispute_evidence (
+                id TEXT PRIMARY KEY,
+                dispute_id TEXT NOT NULL REFERENCES disputes(id) ON DELETE CASCADE,
+                submitted_by_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                evidence_type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                file_url TEXT,
+                is_admin_only INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS dispute_notes (
+                id TEXT PRIMARY KEY,
+                dispute_id TEXT NOT NULL REFERENCES disputes(id) ON DELETE CASCADE,
+                author_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                body TEXT NOT NULL,
+                is_internal INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_dispute_evidence_dispute_id ON dispute_evidence (dispute_id)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_dispute_notes_dispute_id ON dispute_notes (dispute_id)"
+        )
         self._seed_moderation_rules_if_needed(connection)
 
     def _seed_moderation_rules_if_needed(self, connection: sqlite3.Connection) -> None:
@@ -112,6 +147,8 @@ class SQLiteRepository:
             connection.execute("PRAGMA foreign_keys = OFF")
             for table in (
                 "audit_logs",
+                "dispute_notes",
+                "dispute_evidence",
                 "disputes",
                 "reports",
                 "messages",
@@ -282,6 +319,16 @@ class SQLiteRepository:
         if row is None:
             return None
         return Dispute.model_validate(dict(row))
+
+    def _to_dispute_evidence(self, row: sqlite3.Row | None) -> DisputeEvidence | None:
+        if row is None:
+            return None
+        return DisputeEvidence.model_validate(dict(row))
+
+    def _to_dispute_note(self, row: sqlite3.Row | None) -> DisputeNote | None:
+        if row is None:
+            return None
+        return DisputeNote.model_validate(dict(row))
 
     def _to_audit_log(self, row: sqlite3.Row | None) -> AuditLog | None:
         if row is None:
@@ -1080,6 +1127,64 @@ class SQLiteRepository:
                 (status, resolution, resolved_at, dispute_id),
             )
         return self.get_dispute(dispute_id)
+
+    def create_dispute_evidence(self, evidence: DisputeEvidence) -> DisputeEvidence:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO dispute_evidence (
+                    id, dispute_id, submitted_by_user_id, evidence_type, title,
+                    description, file_url, is_admin_only, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    evidence.id,
+                    evidence.dispute_id,
+                    evidence.submitted_by_user_id,
+                    evidence.evidence_type,
+                    evidence.title,
+                    evidence.description,
+                    evidence.file_url,
+                    int(evidence.is_admin_only),
+                    evidence.created_at.isoformat(),
+                ),
+            )
+        return evidence
+
+    def list_dispute_evidence(self, dispute_id: str) -> list[DisputeEvidence]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM dispute_evidence WHERE dispute_id = ? ORDER BY created_at ASC",
+                (dispute_id,),
+            ).fetchall()
+        return [self._to_dispute_evidence(row) for row in rows]
+
+    def create_dispute_note(self, note: DisputeNote) -> DisputeNote:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO dispute_notes (
+                    id, dispute_id, author_user_id, body, is_internal, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    note.id,
+                    note.dispute_id,
+                    note.author_user_id,
+                    note.body,
+                    int(note.is_internal),
+                    note.created_at.isoformat(),
+                ),
+            )
+        return note
+
+    def list_dispute_notes(self, dispute_id: str) -> list[DisputeNote]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM dispute_notes WHERE dispute_id = ? ORDER BY created_at ASC",
+                (dispute_id,),
+            ).fetchall()
+        return [self._to_dispute_note(row) for row in rows]
 
     def create_audit_log(self, audit_log: AuditLog) -> AuditLog:
         with self._connect() as connection:

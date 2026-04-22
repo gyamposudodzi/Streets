@@ -13,6 +13,8 @@ import type {
   CreatorProfile,
   CreatorSummary,
   Dispute,
+  DisputeEvidence,
+  DisputeNote,
   DisputeResolution,
   Payment,
   PaymentIntent,
@@ -172,6 +174,59 @@ export function disputeBooking(
   accessToken: string
 ) {
   return fetchJson<Dispute>(`${apiRoutes.bookings}/${bookingId}/dispute`, {
+    method: "POST",
+    body: JSON.stringify(input),
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function listDisputeEvidence(disputeId: string, accessToken: string) {
+  return fetchJson<DisputeEvidence[]>(`/api/v1/disputes/${disputeId}/evidence`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function createDisputeEvidence(
+  disputeId: string,
+  input: {
+    evidence_type: string;
+    title: string;
+    description?: string;
+    file_url?: string;
+    is_admin_only?: boolean;
+  },
+  accessToken: string
+) {
+  return fetchJson<DisputeEvidence>(`/api/v1/disputes/${disputeId}/evidence`, {
+    method: "POST",
+    body: JSON.stringify(input),
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function listDisputeNotes(disputeId: string, accessToken: string) {
+  return fetchJson<DisputeNote[]>(`/api/v1/disputes/${disputeId}/notes`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+}
+
+export function createDisputeNote(
+  disputeId: string,
+  input: {
+    body: string;
+    is_internal?: boolean;
+  },
+  accessToken: string
+) {
+  return fetchJson<DisputeNote>(`/api/v1/disputes/${disputeId}/notes`, {
     method: "POST",
     body: JSON.stringify(input),
     headers: {

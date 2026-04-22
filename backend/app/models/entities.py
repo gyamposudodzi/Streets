@@ -185,6 +185,27 @@ class Dispute(BaseModel):
     resolved_at: datetime | None = None
 
 
+class DisputeEvidence(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    dispute_id: str
+    submitted_by_user_id: str
+    evidence_type: str
+    title: str
+    description: str | None = None
+    file_url: str | None = None
+    is_admin_only: bool = False
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class DisputeNote(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    dispute_id: str
+    author_user_id: str
+    body: str
+    is_internal: bool = False
+    created_at: datetime = Field(default_factory=utc_now)
+
+
 class AuditLog(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     actor_user_id: str

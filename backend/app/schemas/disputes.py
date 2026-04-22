@@ -24,3 +24,37 @@ class DisputeResponse(BaseModel):
     resolution: DisputeResolution | None
     created_at: datetime
     resolved_at: datetime | None
+
+
+class DisputeEvidenceCreateRequest(BaseModel):
+    evidence_type: str
+    title: str
+    description: str | None = None
+    file_url: str | None = None
+    is_admin_only: bool = False
+
+
+class DisputeEvidenceResponse(BaseModel):
+    id: str
+    dispute_id: str
+    submitted_by_user_id: str
+    evidence_type: str
+    title: str
+    description: str | None
+    file_url: str | None
+    is_admin_only: bool
+    created_at: datetime
+
+
+class DisputeNoteCreateRequest(BaseModel):
+    body: str
+    is_internal: bool = False
+
+
+class DisputeNoteResponse(BaseModel):
+    id: str
+    dispute_id: str
+    author_user_id: str
+    body: str
+    is_internal: bool
+    created_at: datetime

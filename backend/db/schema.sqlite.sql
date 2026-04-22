@@ -157,6 +157,27 @@ CREATE TABLE IF NOT EXISTS disputes (
     resolved_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS dispute_evidence (
+    id TEXT PRIMARY KEY,
+    dispute_id TEXT NOT NULL REFERENCES disputes(id) ON DELETE CASCADE,
+    submitted_by_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    evidence_type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    file_url TEXT,
+    is_admin_only INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS dispute_notes (
+    id TEXT PRIMARY KEY,
+    dispute_id TEXT NOT NULL REFERENCES disputes(id) ON DELETE CASCADE,
+    author_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    is_internal INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS audit_logs (
     id TEXT PRIMARY KEY,
     actor_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -193,6 +214,8 @@ CREATE INDEX IF NOT EXISTS idx_reports_status ON reports (status);
 CREATE INDEX IF NOT EXISTS idx_reports_target ON reports (target_type, target_id);
 CREATE INDEX IF NOT EXISTS idx_disputes_booking_id ON disputes (booking_id);
 CREATE INDEX IF NOT EXISTS idx_disputes_status ON disputes (status);
+CREATE INDEX IF NOT EXISTS idx_dispute_evidence_dispute_id ON dispute_evidence (dispute_id);
+CREATE INDEX IF NOT EXISTS idx_dispute_notes_dispute_id ON dispute_notes (dispute_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs (actor_user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_target ON audit_logs (target_type, target_id);
 CREATE INDEX IF NOT EXISTS idx_moderation_rules_active ON moderation_rules (is_active);
