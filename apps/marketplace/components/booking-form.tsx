@@ -7,21 +7,23 @@ import { useRouter } from "next/navigation";
 import { createBooking } from "@streets/api-client";
 import type { AuthSession } from "@streets/types";
 
+import { AUTH_SESSION_KEY } from "../lib/auth-session";
+
 type BookingFormProps = {
   serviceId: string;
   slotId?: string;
+  /** Where to return after sign-in (e.g. current booking URL with query). */
+  authReturnTo?: string;
 };
 
-const sessionStorageKey = "streets.session";
-
-export function BookingForm({ serviceId, slotId }: BookingFormProps) {
+export function BookingForm({ serviceId, slotId, authReturnTo = "/bookings/new" }: BookingFormProps) {
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const raw = window.localStorage.getItem(sessionStorageKey);
+    const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
     setSession(raw ? (JSON.parse(raw) as AuthSession) : null);
   }, []);
 
@@ -65,7 +67,8 @@ export function BookingForm({ serviceId, slotId }: BookingFormProps) {
       </div>
       {!session ? (
         <p className="errorText">
-          No buyer session found. <Link href="/auth">Register or sign in here.</Link>
+          No buyer session found.{" "}
+          <Link href={`/auth?next=${encodeURIComponent(authReturnTo)}`}>Join or sign in</Link>
         </p>
       ) : null}
       {error ? <p className="errorText">{error}</p> : null}

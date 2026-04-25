@@ -1,6 +1,6 @@
 # Streets UI/UX Roadmap
 
-Last updated: 2026-04-20
+Last updated: 2026-04-25
 
 ## Design Intent
 
@@ -10,26 +10,22 @@ The UI should not feel like a developer scaffold, a generic dashboard, or a casu
 
 ## Brand Direction
 
-Primary brand colors:
+**Implemented (web, 2026-04):** The marketplace and admin apps now ship with a coordinated token set in `apps/marketplace/app/globals.css` and `apps/admin/app/globals.css`, plus `next/font/google` pairing of **Fraunces** (display) and **DM Sans** (UI).
 
-- Grape red: `#7A1632`
-- Deep grape: `#4B0D20`
-- Black: `#050505`
-- Soft black: `#121111`
-- Warm off-white: `#F7F1EC`
-- Muted surface: `#1A1718`
-- Border on dark: `#31272B`
-- Success: `#2F8F5B`
-- Warning: `#C78A25`
-- Danger: `#B3263A`
+Primary brand colors (canonical tokens):
+
+- **White / snow:** `#ffffff`, `#f6f7fb`, `#fafbfc` — marketplace grounds, cards, top bar scrim.
+- **Red grape:** `#7a1f3d` (primary), `#4a1024` (deep), `#5c1830` (mid) — CTAs, brand gradient, active subnav, money cards.
+- **Black / ink:** `#0a0a0c`, `#1a1719` — typography, secondary buttons, hero and admin structural depth.
+- **Blue accent:** `#1d4ed8`, `#1e3a5f`, `#93c5fd` (on dark) — inline links, `:focus-visible` rings, hero eyebrow on dark hero, admin badge and panel highlights; use sparingly so grape remains the dominant brand thread.
+- **Semantic:** success `#0d7a4f`, warning `#b45309`, danger `#b4233a` (marketplace tokens; admin uses slightly brighter variants for dark-mode contrast).
 
 Recommended color usage:
 
-- Use black as the main structural color for navigation, dashboard shells, and premium surfaces.
-- Use grape red as the primary action color, brand highlight, active state, and visual thread through the product.
-- Use deep grape for gradients, cards, shadows, and elevated brand moments.
-- Use off-white only for content-heavy surfaces where readability matters.
-- Avoid bright red error overload. Reserve danger red for actual destructive or risk states.
+- Use **black** for primary reading color and dark shells (admin); use **white** for marketplace content panels.
+- Use **grape** for primary actions, brand moments, and “funds held” seriousness — never replace it with blue for main CTAs.
+- Use **blue** for navigation affordance (active pill on light nav), focus states, and subtle cool gradients that signal trust and clarity without competing with grape.
+- Reserve **danger** for true risk states; do not tint entire screens red.
 
 Brand personality:
 
@@ -39,16 +35,15 @@ Brand personality:
 
 Visual language:
 
-- Rounded but not bubbly.
-- Dark-first admin and creator surfaces.
-- Marketplace can use a warmer editorial surface but should still retain black/grape accents.
-- Use strong section hierarchy, compact status pills, clear timelines, and money-state cards.
+- Rounded corners at **~0.95–1.5rem**; avoid toy-like full bubbles except pills and segmented controls.
+- **Light-first marketplace**, **dark-first admin** (long-session operations).
+- Strong section hierarchy, compact status pills (`success` / `warning` / `danger` / `brand` tones), clear booking timelines, and elevated money-state cards on ink–grape gradients.
 
-Typography direction:
+Typography (locked for web):
 
-- Use a professional display font for headings, such as `Sora`, `Cabinet Grotesk`, or `General Sans`.
-- Use a readable UI font for forms/data, such as `Inter Tight`, `Geist`, or `Source Sans 3`.
-- Avoid default `Segoe UI` as the long-term brand font.
+- **Fraunces** — headings, brand wordmark gradient text.
+- **DM Sans** — body, labels, buttons, forms.
+- Loaded via `next/font` in `apps/marketplace/app/layout.tsx` and `apps/admin/app/layout.tsx` so Windows and CI builds do not depend on local font installs.
 
 ## Core UX Principles
 

@@ -32,10 +32,59 @@ export const apiRoutes = {
   meta: "/api/v1/meta",
   register: "/api/v1/auth/register",
   login: "/api/v1/auth/login",
+  me: "/api/v1/auth/me",
   creators: "/api/v1/creators",
   services: "/api/v1/services",
   bookings: "/api/v1/bookings"
 } as const;
+
+export class ApiClientError extends Error {
+  readonly status: number;
+  readonly detail: string | undefined;
+
+  constructor(status: number, detail?: string) {
+    super(detail ?? `Request failed (${status})`);
+    this.name = "ApiClientError";
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+async function fetchJsonWithDetail<T>(
+  path: string,
+  options?: RequestInit,
+  query?: Record<string, string | undefined>
+): Promise<T> {
+  const response = await fetch(buildUrl(path, query), {
+    cache: "no-store",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options?.headers ?? {})
+    }
+  });
+
+  if (!response.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await response.json()) as { detail?: unknown };
+      const d = body?.detail;
+      if (typeof d === "string") {
+        detail = d;
+      } else if (Array.isArray(d) && d.length > 0 && typeof d[0] === "object" && d[0] !== null) {
+        const first = d[0] as { msg?: string };
+        if (typeof first.msg === "string") {
+          detail = first.msg;
+        }
+      }
+    } catch {
+      /* ignore parse errors */
+    }
+    throw new ApiClientError(response.status, detail);
+  }
+
+  return response.json() as Promise<T>;
+}
 
 function buildUrl(path: string, query?: Record<string, string | undefined>) {
   const url = new URL(path, apiBaseUrl);
@@ -320,16 +369,24 @@ export function registerUser(input: {
   role?: "user" | "creator" | "admin";
   is_age_verified?: boolean;
 }) {
-  return fetchJson<AppUser>(apiRoutes.register, {
+  return fetchJsonWithDetail<AppUser>(apiRoutes.register, {
     method: "POST",
     body: JSON.stringify(input)
   });
 }
 
 export function loginUser(input: { email: string }) {
-  return fetchJson<AuthSession>(apiRoutes.login, {
+  return fetchJsonWithDetail<AuthSession>(apiRoutes.login, {
     method: "POST",
     body: JSON.stringify(input)
+  });
+}
+
+export function getCurrentUser(accessToken: string) {
+  return fetchJsonWithDetail<AppUser>(apiRoutes.me, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
   });
 }
 

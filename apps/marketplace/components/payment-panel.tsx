@@ -9,9 +9,8 @@ import {
 } from "@streets/api-client";
 import type { AuthSession, BookingPaymentState, Payment } from "@streets/types";
 import { formatBookingStatus } from "./booking-status";
+import { AUTH_SESSION_KEY } from "../lib/auth-session";
 import { MoneyStateCard } from "./money-state-card";
-
-const sessionStorageKey = "streets.session";
 
 type PaymentPanelProps = {
   bookingId: string;
@@ -26,7 +25,7 @@ function formatMoney(cents: number, currency: string) {
 }
 
 function readSession(): AuthSession | null {
-  const raw = window.localStorage.getItem(sessionStorageKey);
+  const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
   return raw ? (JSON.parse(raw) as AuthSession) : null;
 }
 

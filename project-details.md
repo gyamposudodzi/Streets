@@ -1,6 +1,6 @@
 # Streets Project Details
 
-Last updated: 2026-04-19
+Last updated: 2026-04-25
 
 ## Purpose
 
@@ -10,7 +10,24 @@ The product uses neutral marketplace language. In-person bookings are supported 
 
 ## Current Runtime Shape
 
-Local backend:
+**Full stack from the repository root** (runs API on port **8000**, marketplace on **3000**, admin on **3001**). Requires root `npm install`, a Python venv with `pip install -r backend/requirements.txt`, and either `.venv` at the repo root or `python` / `python3` on `PATH`. Override the interpreter with `STREETS_PYTHON` if needed.
+
+```powershell
+npm install
+npm run dev
+```
+
+Individual processes:
+
+```powershell
+npm run dev:api
+npm run dev:marketplace
+npm run dev:admin
+```
+
+`dev:api` runs `scripts/run-dev-api.mjs`, which sets `PYTHONPATH` to the `backend` package, default `STREETS_CORS_ORIGINS` for both Next apps, and serves `app.main:app` from the repo root so the default SQLite path `backend/data/streets_dev.db` resolves correctly.
+
+Local backend only (manual, equivalent to `dev:api`):
 
 ```powershell
 $env:PYTHONPATH="backend"
@@ -18,14 +35,14 @@ $env:STREETS_CORS_ORIGINS="http://localhost:3000,http://127.0.0.1:3000,http://lo
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Marketplace:
+Marketplace only:
 
 ```powershell
 $env:NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
 npm.cmd run dev -w @streets/marketplace -- -p 3000
 ```
 
-Admin:
+Admin only:
 
 ```powershell
 $env:NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
@@ -263,6 +280,23 @@ Current SQLite and PostgreSQL schema targets include:
 - `audit_logs`: append-only admin action trail for moderation, booking, dispute, and money decisions.
 - `moderation_rules`: admin-managed public wording rules used to flag or hold service listings.
 
+## Frontend design system (web)
+
+The marketplace (`apps/marketplace`) and admin (`apps/admin`) share a **premium, trust-forward** visual language implemented in **component-level CSS** (no Tailwind). Typography is loaded with **`next/font/google`**: **Fraunces** for display headings and **DM Sans** for body and controls.
+
+**Palette**
+
+- **White** (`#ffffff`, `#f6f7fb`, `#fafbfc`): primary surfaces, cards, and marketplace page ground.
+- **Red grape** (`#7a1f3d` primary, `#4a1024` deep): primary actions, brand mark, hero gradient spine, held-funds and CTA moments.
+- **Black** (`#0a0a0c`, `#1a1719`): body text, secondary buttons, dark hero and admin backgrounds.
+- **Blue** (`#1d4ed8`, `#1e3a5f`, `#93c5fd` on dark): accent links, focus rings, hero eyebrow on dark panels, admin “verified ops” badge tint, and subtle cool gradients for depth.
+
+**UX notes**
+
+- Marketplace uses a **light-first** canvas: cool mist gradients, elevated white panels, hover lift on cards, and a pill-based primary nav with a grape **Account** CTA.
+- Admin remains **dark-first** for long operational sessions, with a sticky top bar (brand + tagline), grape-forward active states, and blue in panel headers and featured automation cards.
+- See `docs/ui-ux-roadmap.md` for principles; token hex values are defined in `apps/marketplace/app/globals.css` and `apps/admin/app/globals.css`.
+
 ## Repository Map
 
 ### Root Files
@@ -271,12 +305,14 @@ Current SQLite and PostgreSQL schema targets include:
 - `README.md`: high-level project introduction, repo layout, and setup notes.
 - `roadmap.md`: status-aware build roadmap with completed, partial, pending, and next-step work.
 - `project-details.md`: this file; workflow and file-by-file project map.
-- `package.json`: root npm workspace definition and structure-check script.
+- `package.json`: root npm workspace definition, `check:structure`, `dev` / `dev:*`, and `build` scripts.
 - `package-lock.json`: npm dependency lockfile.
 
 ### Scripts
 
 - `scripts/check-structure.mjs`: validates the expected scaffold directories/files exist.
+- `scripts/run-dev-api.mjs`: starts Uvicorn with `PYTHONPATH` set to `backend`, default CORS origins for local Next apps, repo-root cwd for SQLite; honors `STREETS_PYTHON` for the interpreter.
+- Root `package.json` `scripts.dev` / `dev:api` / `dev:marketplace` / `dev:admin` / `build`: orchestrate local development and web builds via `concurrently` and `cross-env`.
 
 ### Documentation
 
@@ -389,9 +425,9 @@ Current SQLite and PostgreSQL schema targets include:
 
 ### Marketplace App Router
 
-- `apps/marketplace/app/layout.tsx`: root marketplace HTML/app layout.
-- `apps/marketplace/app/globals.css`: marketplace global styles.
-- `apps/marketplace/app/page.tsx`: marketplace home page with public discovery content.
+- `apps/marketplace/app/layout.tsx`: root marketplace layout, top bar, and `next/font` (Fraunces + DM Sans).
+- `apps/marketplace/app/globals.css`: marketplace design tokens, components, and light-first premium styling (white, grape, black, blue accent).
+- `apps/marketplace/app/page.tsx`: marketplace home page with public discovery content and hero copy.
 - `apps/marketplace/app/auth/page.tsx`: auth page that renders the auth panel.
 - `apps/marketplace/app/search/page.tsx`: searchable service discovery page.
 - `apps/marketplace/app/services/[serviceId]/page.tsx`: service detail page.
@@ -401,7 +437,7 @@ Current SQLite and PostgreSQL schema targets include:
 
 ### Marketplace Components
 
-- `apps/marketplace/components/auth-panel.tsx`: client-side registration/login panel using local storage session persistence.
+- `apps/marketplace/components/auth-flow.tsx`: client auth workflow (sign in / join tabs, validation, API error mapping, `/auth/me` session validation, redirect via `?next=`), backed by `lib/auth-session.ts` and `ApiClientError` from `@streets/api-client`.
 - `apps/marketplace/components/session-status.tsx`: displays current marketplace session state and sign-out control.
 - `apps/marketplace/components/booking-form.tsx`: booking creation form for selected services/slots.
 - `apps/marketplace/components/payment-panel.tsx`: payment intent and simulated payment success UI plus held funds, ledger, and provider-event display.
@@ -421,8 +457,8 @@ Current SQLite and PostgreSQL schema targets include:
 
 ### Admin App Router
 
-- `apps/admin/app/layout.tsx`: root admin HTML/app layout.
-- `apps/admin/app/globals.css`: admin global styles.
+- `apps/admin/app/layout.tsx`: root admin layout with sticky top bar, tagline, and shared fonts (Fraunces + DM Sans).
+- `apps/admin/app/globals.css`: admin dark-console tokens (black, grape, blue accent) and dashboard chrome.
 - `apps/admin/app/page.tsx`: admin dashboard page wrapper.
 
 ### Admin Components

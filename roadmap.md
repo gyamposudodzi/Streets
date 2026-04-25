@@ -1,6 +1,6 @@
 # Streets Build Roadmap
 
-Last updated: 2026-04-19
+Last updated: 2026-04-25
 
 ## Product Direction
 
@@ -27,6 +27,7 @@ Completed foundations:
 - Shared TypeScript API client and shared type package.
 - Development auth with user, creator, and admin roles.
 - Creator profiles, service listings, service moderation state, admin-managed public wording rules, availability slots, booking creation, booking events, simulated payments, held funds, ledger entries, chat, reports, disputes, admin release/refund tools, and admin-triggered automation controls.
+- Premium web UI foundation: shared visual language across marketplace and admin using CSS design tokens (white surfaces, red grape brand, black typography structure, blue accents for trust links and focus), `next/font` loading of **Fraunces** (display) and **DM Sans** (UI), refined navigation and hero on the marketplace, and a sticky admin top bar plus blue-accented panels on the dark admin console.
 
 Partially complete foundations:
 
@@ -53,7 +54,7 @@ Frontend:
 - Web marketplace: Next.js + React + TypeScript.
 - Admin dashboard: Next.js + React + TypeScript.
 - Shared data fetching: currently direct `fetch` helpers; TanStack Query can be added when client-side state grows.
-- UI layer: current custom CSS; Tailwind or Material UI can be introduced later if desired.
+- UI layer: custom CSS with documented design tokens (no Tailwind in tree); optional future adoption of Tailwind or a component library if the team wants utility-first styling at scale.
 
 Android:
 

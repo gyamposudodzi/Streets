@@ -40,6 +40,16 @@ Phase 0 focuses on structure and standards, not a fully installed runtime yet.
 
 Local backend development now defaults to SQLite at `backend/data/streets_dev.db` so we can work without requiring PostgreSQL during early feature delivery.
 
+### Run API + web apps from the repo root
+
+After `npm install` at the root and a Python environment with `pip install -r backend/requirements.txt` (a `.venv` in the repo root is detected automatically; otherwise set `STREETS_PYTHON` to your interpreter):
+
+```bash
+npm run dev
+```
+
+This starts the FastAPI app on **http://127.0.0.1:8000**, the marketplace on **http://127.0.0.1:3000**, and the admin app on **http://127.0.0.1:3001**. Use `npm run dev:api`, `npm run dev:marketplace`, or `npm run dev:admin` to run a single service. Root `npm run build` builds both Next apps.
+
 Suggested next steps:
 
 1. Install dependencies for the selected package managers and toolchains.

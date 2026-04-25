@@ -7,6 +7,17 @@
     "packages/*"
   ],
   "scripts": {
-    "check:structure": "node scripts/check-structure.mjs"
+    "check:structure": "node scripts/check-structure.mjs",
+    "dev": "concurrently -n api,marketplace,admin -c blue,cyan,magenta \"npm run dev:api\" \"npm run dev:marketplace\" \"npm run dev:admin\"",
+    "dev:api": "node scripts/run-dev-api.mjs",
+    "dev:marketplace": "cross-env NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run dev -w @streets/marketplace -- -p 3000",
+    "dev:admin": "cross-env NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run dev -w @streets/admin -- -p 3001",
+    "build": "npm run build -w @streets/marketplace && npm run build -w @streets/admin",
+    "build:marketplace": "npm run build -w @streets/marketplace",
+    "build:admin": "npm run build -w @streets/admin"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3"
   }
 }

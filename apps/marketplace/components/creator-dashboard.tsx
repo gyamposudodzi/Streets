@@ -19,9 +19,8 @@ import {
   upsertCreatorProfile
 } from "@streets/api-client";
 import type { AuthSession, Booking, BookingPaymentState, BookingStatus, Service } from "@streets/types";
+import { AUTH_SESSION_KEY } from "../lib/auth-session";
 import { formatBookingStatus } from "./booking-status";
-
-const sessionStorageKey = "streets.session";
 
 const emptyProfile = {
   display_name: "",
@@ -133,7 +132,7 @@ export function CreatorDashboard() {
   );
 
   useEffect(() => {
-    const raw = window.localStorage.getItem(sessionStorageKey);
+    const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
     const parsed = raw ? (JSON.parse(raw) as AuthSession) : null;
     setSession(parsed);
   }, []);

@@ -12,14 +12,14 @@ import {
 import type { AuthSession, Booking } from "@streets/types";
 import { bookingNextStep, formatBookingStatus } from "./booking-status";
 
-const sessionStorageKey = "streets.session";
+import { AUTH_SESSION_KEY } from "../lib/auth-session";
 
 type BookingActionsProps = {
   booking: Booking;
 };
 
 function readSession(): AuthSession | null {
-  const raw = window.localStorage.getItem(sessionStorageKey);
+  const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
   return raw ? (JSON.parse(raw) as AuthSession) : null;
 }
 

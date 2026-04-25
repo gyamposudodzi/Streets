@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getService, listServiceSlots } from "@streets/api-client";
+import { SocialAvatar } from "../../../components/social-avatar";
+import { getCreator, getService, listServiceSlots } from "@streets/api-client";
+import { gradientForId } from "../../../lib/social-visual";
 
 type ServiceDetailPageProps = {
   params: Promise<{ serviceId: string }>;
@@ -29,63 +31,82 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
     notFound();
   }
 
-  const slots = await listServiceSlots(serviceId).catch(() => []);
+  const [slots, host] = await Promise.all([
+    listServiceSlots(serviceId).catch(() => []),
+    getCreator(service.creator_id).catch(() => null)
+  ]);
+
+  const cover = gradientForId(service.id);
 
   return (
-    <main className="page">
-      <section className="hero">
-        <p className="eyebrow">Service</p>
-        <h1>{service.title}</h1>
-        <p>{service.description}</p>
-        <div className="stats">
-          <article className="stat">
-            <strong>{formatPrice(service.price, service.currency)}</strong>
-            <span>Price</span>
-          </article>
-          <article className="stat">
-            <strong>{service.duration_minutes} min</strong>
-            <span>Duration</span>
-          </article>
-          <article className="stat">
-            <strong>{service.fulfillment_type.replace("_", " ")}</strong>
-            <span>Fulfillment</span>
-          </article>
+    <main className="page page--social">
+      <section className="serviceCover" style={{ background: cover }}>
+        <div className="serviceCoverInner">
+          <p className="serviceCoverType">{service.fulfillment_type.replaceAll("_", " ")}</p>
+          <h1 className="serviceCoverTitle">{service.title}</h1>
+          <p className="serviceCoverPrice">{formatPrice(service.price, service.currency)}</p>
         </div>
       </section>
 
-      <section className="panel">
+      {host ? (
+        <section className="hostBar">
+          <SocialAvatar id={host.user_id} name={host.display_name} size="lg" />
+          <div className="hostBarText">
+            <p className="hostBarLabel">Hosted by</p>
+            <p className="hostBarName">{host.display_name}</p>
+            <p className="hostBarMeta">
+              {host.service_region} · ★ {host.average_rating.toFixed(1)}
+            </p>
+          </div>
+          <Link href={`/search?creator=${host.user_id}`} className="hostBarFollow">
+            More from them
+          </Link>
+        </section>
+      ) : null}
+
+      <section className="panel panel--social">
+        <h2 className="serviceAboutTitle">About this</h2>
+        <p className="serviceAboutBody">{service.description}</p>
+        <div className="serviceFacts">
+          <span>{service.category}</span>
+          <span>·</span>
+          <span>{service.duration_minutes} min</span>
+        </div>
+      </section>
+
+      <section className="panel panel--social">
         <div className="panelHeader">
           <div>
-            <p className="eyebrow">Availability</p>
-            <h2>Choose a slot or continue without one</h2>
+            <p className="eyebrow eyebrow--social">Time</p>
+            <h2>Pick a slot or just go for it</h2>
           </div>
-          <Link href={`/bookings/new?service=${service.id}`} className="buttonLink">
-            Start booking
+          <Link href={`/bookings/new?service=${service.id}`} className="buttonLink button--round">
+            Book
           </Link>
         </div>
-        <div className="grid">
+        <div className="slotGrid">
           {slots.length > 0 ? (
             slots.map((slot) => (
-              <article key={slot.id} className="card">
-                <h3>{formatDate(slot.starts_at)}</h3>
-                <p>Ends {formatDate(slot.ends_at)}</p>
-                <p>{slot.is_reserved ? "Reserved" : "Available"}</p>
+              <article key={slot.id} className="slotCard">
+                <p className="slotCardTime">{formatDate(slot.starts_at)}</p>
+                <p className="slotCardEnd">→ {formatDate(slot.ends_at)}</p>
+                <p className="slotCardState">{slot.is_reserved ? "Taken" : "Open"}</p>
                 {!slot.is_reserved ? (
                   <Link
                     href={`/bookings/new?service=${service.id}&slot=${slot.id}`}
                     className="inlineLink"
                   >
-                    Book this slot
+                    Lock this time
                   </Link>
                 ) : null}
               </article>
             ))
           ) : (
-            <article className="card">
-              <h3>No slots published</h3>
+            <article className="emptyStateCard">
+              <h3>No calendar blocks</h3>
               <p>
-                This service can still be booked if the creator uses a flexible or
-                non-calendar fulfillment flow.
+                You can still book—some creators run flexible timing. Hit “Book” and work it out in
+                chat.
               </p>
             </article>
           )}

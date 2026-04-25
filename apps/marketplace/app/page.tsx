@@ -1,13 +1,13 @@
 import Link from "next/link";
 
+import { SocialAvatar } from "../components/social-avatar";
+import { SocialCreatorStory } from "../components/social-creator-story";
+import { SocialServiceCard } from "../components/social-service-card";
 import { listCreators, listServices } from "@streets/api-client";
 
 async function getMarketplaceData() {
   try {
-    const [creators, services] = await Promise.all([
-      listCreators(),
-      listServices()
-    ]);
+    const [creators, services] = await Promise.all([listCreators(), listServices()]);
     return { creators, services, isFallback: false };
   } catch {
     return { creators: [], services: [], isFallback: true };
@@ -25,93 +25,101 @@ export default async function MarketplaceHome() {
   const { creators, services, isFallback } = await getMarketplaceData();
 
   return (
-    <main className="page">
-      <section className="hero">
-        <p className="eyebrow">Streets</p>
-        <h1>Marketplace foundation</h1>
-        <p>
-          Phase 1 now includes live creator and service discovery from the backend, with
-          remote and in-person fulfillment carried through the same booking model.
+    <main className="page page--social">
+      <section className="socialHero">
+        <p className="socialHeroKicker">Your feed starts here</p>
+        <h1>Meet people. See what they offer. Book in a tap.</h1>
+        <p className="socialHeroSub">
+          Scroll creators like stories, then dive into what they’re selling—calls, video, chat,
+          in-person hangouts, custom requests. It’s a social layer on top of real bookings.
         </p>
-        <div className="stats">
-          <article className="stat">
-            <strong>{creators.length}</strong>
-            <span>Creators surfaced</span>
-          </article>
-          <article className="stat">
-            <strong>{services.length}</strong>
-            <span>Active services</span>
-          </article>
-          <article className="stat">
-            <strong>{isFallback ? "Offline" : "Live"}</strong>
-            <span>Marketplace data mode</span>
-          </article>
+        <div className="socialHeroChips">
+          <span className="socialChip">For you</span>
+          <span className="socialChip socialChip--mute">·</span>
+          <span className="socialChip">{creators.length} people</span>
+          <span className="socialChip socialChip--mute">·</span>
+          <span className="socialChip accent">{services.length} drops live</span>
         </div>
+        {isFallback ? (
+          <p className="socialHeroNote">
+            Flip the API on to load real faces and listings—this UI is ready to party.
+          </p>
+        ) : null}
       </section>
 
-      <section className="panel">
+      {creators.length > 0 ? (
+        <section className="storyRailWrap">
+          <div className="storyRailHeader">
+            <h2 className="storyRailTitle">People on Streets</h2>
+            <Link className="storyRailLink" href="/search">
+              See all
+            </Link>
+          </div>
+          <div className="storyStrip" role="list">
+            {creators.map((c) => (
+              <div key={c.user_id} role="listitem">
+                <SocialCreatorStory creator={c} />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <section className="panel panel--social">
         <div className="panelHeader">
           <div>
-            <p className="eyebrow">Creators</p>
-            <h2>Discovery surface</h2>
+            <p className="eyebrow eyebrow--social">Creators you can book</p>
+            <h2>Profiles worth a follow</h2>
           </div>
-          {isFallback ? (
-            <p className="note">
-              Backend unavailable. Start the API to load seeded marketplace data.
-            </p>
-          ) : null}
         </div>
-        <div className="grid">
+        <div className="grid grid--people">
           {creators.length > 0 ? (
             creators.map((creator) => (
-              <article key={creator.user_id} className="card">
-                <h3>{creator.display_name}</h3>
-                <p>{creator.service_region}</p>
-                <p>
-                  {creator.country} - {creator.verification_status}
-                </p>
-                <p>Rating {creator.average_rating.toFixed(1)}</p>
-                <Link href={`/search?creator=${creator.user_id}`} className="inlineLink">
-                  View services
-                </Link>
-              </article>
+              <Link
+                key={creator.user_id}
+                href={`/search?creator=${creator.user_id}`}
+                className="personCard"
+              >
+                <div className="personCardAvatarWrap">
+                  <SocialAvatar id={creator.user_id} name={creator.display_name} size="lg" />
+                </div>
+                <div>
+                  <h3 className="personCardName">{creator.display_name}</h3>
+                  <p className="personCardMeta">
+                    {creator.service_region} · {creator.country}
+                  </p>
+                  <p className="personCardRating">★ {creator.average_rating.toFixed(1)}</p>
+                </div>
+              </Link>
             ))
           ) : (
             <article className="card">
-              <h3>No creators loaded</h3>
-              <p>The UI is ready to render real discovery data once the backend is running.</p>
+              <h3>Nobody here yet</h3>
+              <p>Start the app backend and you’ll see real profiles roll in.</p>
             </article>
           )}
         </div>
       </section>
 
-      <section className="panel">
+      <section className="panel panel--social">
         <div className="panelHeader">
           <div>
-            <p className="eyebrow">Services</p>
-            <h2>Bookable offerings</h2>
+            <p className="eyebrow eyebrow--social">Explore</p>
+            <h2>What’s on the feed</h2>
           </div>
+          <Link href="/search" className="textLinkPill">
+            Open explore →
+          </Link>
         </div>
-        <div className="grid">
+        <div className="visualGrid">
           {services.length > 0 ? (
             services.map((service) => (
-              <article key={service.id} className="card">
-                <p className="badge">{service.fulfillment_type.replace("_", " ")}</p>
-                <h3>{service.title}</h3>
-                <p>{service.description}</p>
-                <p>
-                  {service.category} - {service.duration_minutes} min
-                </p>
-                <p>{formatPrice(service.price, service.currency)}</p>
-                <Link href={`/services/${service.id}`} className="inlineLink">
-                  Open service
-                </Link>
-              </article>
+              <SocialServiceCard key={service.id} service={service} formatPrice={formatPrice} />
             ))
           ) : (
             <article className="card">
-              <h3>No services loaded</h3>
-              <p>Once the API is live, seeded services will render here automatically.</p>
+              <h3>Nothing in the stream</h3>
+              <p>Connect the API and listings will show up as visual cards.</p>
             </article>
           )}
         </div>

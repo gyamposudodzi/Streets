@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { SocialServiceCard } from "../../components/social-service-card";
 import { listServices } from "@streets/api-client";
 
 type SearchPageProps = {
@@ -28,54 +27,51 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }).catch(() => []);
 
   return (
-    <main className="page">
-      <section className="panel">
-        <p className="eyebrow">Search</p>
-        <h1>Discover bookable services</h1>
-        <p>
-          Browse the current creator catalog across video, custom, chat, call, and
-          in-person fulfillment paths.
-        </p>
-        <form className="filters" action="/search">
+    <main className="page page--social">
+      <section className="panel panel--social panel--explore">
+        <div className="exploreTop">
+          <p className="eyebrow eyebrow--social">Explore</p>
+          <h1 className="exploreTitle">What do you want to do tonight?</h1>
+          <p className="exploreLead">
+            Search what creators are putting out—video hangs, custom requests, calls, IRL—then tap in.
+          </p>
+        </div>
+        <form className="exploreSearch" action="/search">
           <input
-            className="input"
+            className="input input--search"
             type="search"
             name="q"
-            placeholder="Search title or description"
+            placeholder="Search vibes, skills, or titles…"
             defaultValue={params.q ?? ""}
+            autoComplete="off"
           />
-          <select className="input" name="fulfillment" defaultValue={params.fulfillment ?? ""}>
-            <option value="">All fulfillment types</option>
-            <option value="video">Video</option>
-            <option value="audio_call">Audio call</option>
-            <option value="chat">Chat</option>
-            <option value="custom_request">Custom request</option>
-            <option value="in_person">In person</option>
-          </select>
-          <button className="button" type="submit">
-            Search
-          </button>
+          <div className="exploreSearchRow">
+            <select
+              className="input input--select"
+              name="fulfillment"
+              defaultValue={params.fulfillment ?? ""}
+            >
+              <option value="">Any format</option>
+              <option value="video">Video</option>
+              <option value="audio_call">Call</option>
+              <option value="chat">Chat</option>
+              <option value="custom_request">Custom</option>
+              <option value="in_person">In person</option>
+            </select>
+            <button className="button button--round" type="submit">
+              Search
+            </button>
+          </div>
         </form>
-        <div className="grid">
+        <div className="visualGrid">
           {services.length > 0 ? (
             services.map((service) => (
-              <article key={service.id} className="card">
-                <p className="badge">{service.fulfillment_type.replace("_", " ")}</p>
-                <h3>{service.title}</h3>
-                <p>{service.description}</p>
-                <p>
-                  {service.category} - {service.duration_minutes} min
-                </p>
-                <p>{formatPrice(service.price, service.currency)}</p>
-                <Link href={`/services/${service.id}`} className="inlineLink">
-                  View details
-                </Link>
-              </article>
+              <SocialServiceCard key={service.id} service={service} formatPrice={formatPrice} />
             ))
           ) : (
-            <article className="card">
-              <h3>No services found</h3>
-              <p>Try broadening the query or changing the fulfillment filter.</p>
+            <article className="emptyStateCard">
+              <h3>Nothing hit that filter</h3>
+              <p>Loosen the search or try another format—new stuff drops all the time.</p>
             </article>
           )}
         </div>

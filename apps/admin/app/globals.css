@@ -1,19 +1,36 @@
+/* Streets admin — dark console: black, red grape, off-white text, blue accent */
+
 :root {
   color-scheme: dark;
-  --color-grape-red: #7a1632;
-  --color-deep-grape: #4b0d20;
-  --color-black: #050505;
-  --color-soft-black: #121111;
-  --color-off-white: #f7f1ec;
-  --color-surface: #171416;
-  --color-surface-strong: #21191d;
-  --color-border: rgba(247, 241, 236, 0.1);
-  --color-muted: #b7aab0;
-  --color-success: #2f8f5b;
-  --color-warning: #c78a25;
-  --color-danger: #b3263a;
-  font-family: "Aptos", "Sora", "Inter Tight", sans-serif;
-  background: var(--color-black);
+
+  --color-white: #ffffff;
+  --color-ink: #0a0a0c;
+  --color-surface: #141218;
+  --color-surface-strong: #1c181d;
+  --color-off-white: #f4f0f2;
+  --color-muted: #a39aa1;
+
+  --color-grape: #7a1f3d;
+  --color-grape-deep: #4a1024;
+  --color-grape-mid: #5c1830;
+  --color-grape-glow: rgba(122, 31, 61, 0.45);
+
+  --color-blue: #3b82f6;
+  --color-blue-deep: #1d4ed8;
+  --color-blue-faint: rgba(59, 130, 246, 0.12);
+
+  --color-border: rgba(244, 240, 242, 0.1);
+  --color-border-accent: rgba(59, 130, 246, 0.22);
+
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #fb7185;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+
+  font-family: var(--font-sans);
+  background: var(--color-ink);
   color: var(--color-off-white);
 }
 
@@ -23,15 +40,86 @@
 
 body {
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+.adminTopbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-ink) 92%, var(--color-grape-deep));
+  backdrop-filter: blur(16px);
+}
+
+.adminTopbarInner {
+  max-width: 84rem;
+  margin: 0 auto;
+  padding: 0.85rem clamp(1rem, 3vw, 2rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.adminBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.adminBrandDot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #c75b7c, var(--color-grape-deep));
+  box-shadow: 0 0 0 3px rgba(122, 31, 61, 0.35);
+}
+
+.adminBrandText {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, var(--color-off-white), rgba(244, 240, 242, 0.75));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.adminBrandBadge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.5rem;
+  border-radius: 999px;
+  color: #bfdbfe;
+  background: var(--color-blue-faint);
+  border: 1px solid var(--color-border-accent);
+}
+
+.adminTopbarTagline {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-muted);
 }
 
 .page {
-  min-height: 100vh;
+  min-height: calc(100vh - 3.25rem);
   padding: 2rem;
   background:
-    radial-gradient(circle at 10% 0%, rgba(122, 22, 50, 0.32), transparent 30rem),
-    radial-gradient(circle at 90% 0%, rgba(75, 13, 32, 0.35), transparent 28rem),
-    linear-gradient(180deg, #050505 0%, #121111 100%);
+    radial-gradient(circle at 12% 0%, rgba(122, 31, 61, 0.28), transparent 32rem),
+    radial-gradient(circle at 88% 8%, var(--color-blue-faint), transparent 26rem),
+    linear-gradient(180deg, #0a0a0c 0%, #121015 100%);
 }
 
 .hero {
@@ -41,22 +129,31 @@ body {
 
 .eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.78rem;
-  color: #f0b8c8;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  color: #93c5fd;
   font-weight: 800;
 }
 
 h1 {
   margin: 0;
-  font-size: clamp(2.2rem, 5vw, 4.7rem);
-  line-height: 0.95;
-  letter-spacing: -0.055em;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.04em;
 }
 
 h2 {
   margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
   letter-spacing: -0.02em;
+}
+
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
 }
 
 p {
@@ -72,9 +169,16 @@ p {
 .card {
   padding: 1rem;
   border-radius: 1.15rem;
-  background: rgba(23, 20, 22, 0.84);
+  background: rgba(20, 18, 24, 0.92);
   border: 1px solid var(--color-border);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.card:hover {
+  border-color: rgba(244, 240, 242, 0.14);
 }
 
 .stack {
@@ -87,13 +191,14 @@ p {
   padding: 0.9rem 1rem;
   border-radius: 0.95rem;
   border: 1px solid var(--color-border);
-  background: rgba(247, 241, 236, 0.08);
+  background: rgba(244, 240, 242, 0.06);
   color: var(--color-off-white);
-  outline-color: var(--color-grape-red);
+  outline-color: var(--color-blue-deep);
+  font-family: inherit;
 }
 
 .input::placeholder {
-  color: rgba(247, 241, 236, 0.48);
+  color: rgba(244, 240, 242, 0.45);
 }
 
 .actions {
@@ -103,18 +208,30 @@ p {
 }
 
 .button {
-  padding: 0.9rem 1.1rem;
+  padding: 0.9rem 1.15rem;
   border: none;
   border-radius: 0.95rem;
-  background: var(--color-grape-red);
+  background: linear-gradient(135deg, var(--color-grape), var(--color-grape-deep));
   color: var(--color-off-white);
   cursor: pointer;
-  font-weight: 800;
-  box-shadow: 0 12px 24px rgba(122, 22, 50, 0.28);
+  font-weight: 700;
+  font-family: inherit;
+  box-shadow: 0 14px 32px rgba(74, 16, 36, 0.35);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .secondaryButton {
-  background: rgba(247, 241, 236, 0.12);
+  background: rgba(244, 240, 242, 0.1);
   border: 1px solid var(--color-border);
   box-shadow: none;
 }
@@ -127,7 +244,7 @@ p {
   padding: 1.35rem;
   border-radius: 1.4rem;
   background:
-    linear-gradient(135deg, rgba(122, 22, 50, 0.32), rgba(247, 241, 236, 0.05)),
+    linear-gradient(135deg, rgba(122, 31, 61, 0.35), rgba(59, 130, 246, 0.08)),
     var(--color-surface);
   border: 1px solid var(--color-border);
 }
@@ -139,10 +256,10 @@ p {
   padding: 0.75rem;
   border-radius: 1.35rem;
   background:
-    linear-gradient(135deg, rgba(247, 241, 236, 0.07), rgba(122, 22, 50, 0.1)),
-    rgba(5, 5, 5, 0.62);
+    linear-gradient(135deg, rgba(244, 240, 242, 0.06), rgba(122, 31, 61, 0.12)),
+    rgba(8, 7, 10, 0.65);
   border: 1px solid var(--color-border);
-  box-shadow: inset 0 1px 0 rgba(247, 241, 236, 0.08);
+  box-shadow: inset 0 1px 0 rgba(244, 240, 242, 0.06);
 }
 
 .subnavButton {
@@ -152,24 +269,25 @@ p {
   padding: 0.85rem 0.95rem;
   border-radius: 1rem;
   border: 1px solid transparent;
-  background: rgba(247, 241, 236, 0.05);
+  background: rgba(244, 240, 242, 0.04);
   color: var(--color-off-white);
   text-align: left;
   cursor: pointer;
+  font-family: inherit;
   transition:
-    border-color 160ms ease,
-    background 160ms ease,
-    transform 160ms ease;
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
 }
 
 .subnavButton:hover {
   transform: translateY(-1px);
-  border-color: rgba(247, 241, 236, 0.18);
-  background: rgba(247, 241, 236, 0.08);
+  border-color: rgba(244, 240, 242, 0.16);
+  background: rgba(244, 240, 242, 0.07);
 }
 
 .subnavButton span {
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.01em;
 }
 
@@ -179,15 +297,15 @@ p {
 }
 
 .activeSubnavButton {
-  border-color: rgba(240, 184, 200, 0.42);
+  border-color: rgba(147, 197, 253, 0.35);
   background:
-    linear-gradient(135deg, rgba(122, 22, 50, 0.95), rgba(75, 13, 32, 0.84)),
-    var(--color-grape-red);
-  box-shadow: 0 16px 34px rgba(122, 22, 50, 0.32);
+    linear-gradient(135deg, rgba(122, 31, 61, 0.98), rgba(74, 16, 36, 0.92)),
+    var(--color-grape);
+  box-shadow: 0 16px 36px rgba(74, 16, 36, 0.38);
 }
 
 .activeSubnavButton small {
-  color: rgba(247, 241, 236, 0.78);
+  color: rgba(244, 240, 242, 0.8);
 }
 
 .compactPanelHeader {
@@ -198,7 +316,7 @@ p {
 .sectionCount {
   padding: 0.55rem 0.75rem;
   border-radius: 999px;
-  background: rgba(247, 241, 236, 0.08);
+  background: rgba(244, 240, 242, 0.08);
   color: var(--color-muted);
   font-size: 0.9rem;
   font-weight: 800;
@@ -210,7 +328,7 @@ p {
   gap: 0.65rem;
   padding: 0.5rem;
   border-radius: 1rem;
-  background: rgba(247, 241, 236, 0.05);
+  background: rgba(244, 240, 242, 0.04);
   border: 1px solid var(--color-border);
 }
 
@@ -225,10 +343,11 @@ p {
   color: var(--color-off-white);
   text-align: left;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .miniSubnavButton span {
-  font-weight: 900;
+  font-weight: 800;
 }
 
 .miniSubnavButton small {
@@ -237,12 +356,12 @@ p {
 }
 
 .activeMiniSubnavButton {
-  border-color: rgba(240, 184, 200, 0.34);
-  background: rgba(122, 22, 50, 0.36);
+  border-color: rgba(147, 197, 253, 0.3);
+  background: rgba(122, 31, 61, 0.4);
 }
 
 .activeMiniSubnavButton small {
-  color: rgba(247, 241, 236, 0.76);
+  color: rgba(244, 240, 242, 0.78);
 }
 
 .queueToolbar {
@@ -252,7 +371,7 @@ p {
   align-items: center;
   padding: 0.75rem;
   border-radius: 1rem;
-  background: rgba(247, 241, 236, 0.05);
+  background: rgba(244, 240, 242, 0.04);
   border: 1px solid var(--color-border);
 }
 
@@ -266,17 +385,18 @@ p {
   padding: 0.65rem 0.8rem;
   border-radius: 999px;
   border: 1px solid transparent;
-  background: rgba(247, 241, 236, 0.07);
+  background: rgba(244, 240, 242, 0.06);
   color: var(--color-muted);
   cursor: pointer;
   font-weight: 800;
+  font-family: inherit;
 }
 
 .activeFilterChip {
   color: var(--color-off-white);
-  background: var(--color-grape-red);
-  border-color: rgba(240, 184, 200, 0.34);
-  box-shadow: 0 12px 24px rgba(122, 22, 50, 0.24);
+  background: linear-gradient(135deg, var(--color-grape), var(--color-grape-deep));
+  border-color: rgba(147, 197, 253, 0.25);
+  box-shadow: 0 12px 28px rgba(74, 16, 36, 0.3);
 }
 
 .queueSearch {
@@ -295,7 +415,7 @@ p {
   align-content: start;
   padding: 1rem;
   border-radius: 1.1rem;
-  background: rgba(247, 241, 236, 0.06);
+  background: rgba(244, 240, 242, 0.05);
   border: 1px solid var(--color-border);
 }
 
@@ -306,8 +426,10 @@ p {
 
 .featuredAutomationCard {
   background:
-    radial-gradient(circle at top right, rgba(122, 22, 50, 0.42), transparent 12rem),
-    rgba(247, 241, 236, 0.07);
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.2), transparent 12rem),
+    radial-gradient(circle at bottom left, rgba(122, 31, 61, 0.35), transparent 14rem),
+    rgba(244, 240, 242, 0.06);
+  border-color: rgba(147, 197, 253, 0.15);
 }
 
 .row {
@@ -326,12 +448,13 @@ p {
 .paymentState {
   padding: 1rem;
   border-radius: 0.95rem;
-  background: rgba(247, 241, 236, 0.06);
+  background: rgba(244, 240, 242, 0.05);
   border: 1px solid var(--color-border);
 }
 
 .errorText {
-  color: #ff9aaa;
+  color: var(--color-danger);
+  font-weight: 600;
 }
 
 @media (max-width: 760px) {

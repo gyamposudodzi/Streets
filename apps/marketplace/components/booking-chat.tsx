@@ -5,14 +5,14 @@ import { useEffect, useState } from "react";
 import { createBookingMessage, createReport, listBookingMessages } from "@streets/api-client";
 import type { AuthSession, BookingMessage } from "@streets/types";
 
-const sessionStorageKey = "streets.session";
+import { AUTH_SESSION_KEY } from "../lib/auth-session";
 
 type BookingChatProps = {
   bookingId: string;
 };
 
 function readSession(): AuthSession | null {
-  const raw = window.localStorage.getItem(sessionStorageKey);
+  const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
   return raw ? (JSON.parse(raw) as AuthSession) : null;
 }
 

@@ -32,6 +32,13 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
     ? slots.find((slot) => slot.id === params.slot && !slot.is_reserved)
     : undefined;
 
+  const returnQs = new URLSearchParams();
+  returnQs.set("service", serviceId);
+  if (params.slot) {
+    returnQs.set("slot", params.slot);
+  }
+  const authReturnTo = `/bookings/new?${returnQs.toString()}`;
+
   return (
     <main className="page">
       <section className="panel">
@@ -68,7 +75,11 @@ export default async function NewBookingPage({ searchParams }: NewBookingPagePro
           </article>
         </div>
         <div className="formShell">
-          <BookingForm serviceId={service.id} slotId={selectedSlot?.id} />
+          <BookingForm
+            serviceId={service.id}
+            slotId={selectedSlot?.id}
+            authReturnTo={authReturnTo}
+          />
         </div>
       </section>
     </main>
